@@ -1,0 +1,10 @@
+Game: Platformer
+Main aspect: Every person makes their own level, with a unique mechanism
+Notes: 
+	- Story element (one consist story through the game)
+	- moving platforms (selective based on type)
+	- puzzle element:
+		- light / dark world (mirror world)
+		- grab a key to unlock goal to end level
+		- enemies, obstacles
+		- protals

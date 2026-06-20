@@ -1,0 +1,18 @@
+# VSCode
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Java
+*.class
+
+# Build
+bin/
+build/
+target/
+
+# Logs
+*.log
