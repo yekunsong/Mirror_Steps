@@ -10,26 +10,43 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
 /*
- * Main menu view.
- * This UI-layer class belongs to the shared presentation package and should only
- * handle menu layout, not gameplay logic.
- * Teammates can extend this screen with credits, settings, or chapter selection later.
+ * Main menu screen.
+ *
+ * This class is a UI file only.
+ * It should not contain gameplay physics, level collision logic, or player logic.
+ *
+ * Relationship notes:
+ * - MenuView does not know how to switch scenes by itself
+ * - AppRouter passes callback methods into this class
+ * - when a button is pressed, MenuView only calls the callback
+ *
+ * This makes the screen easier for one teammate to maintain independently.
+ *
+ * Future extension directions:
+ * - add a Credits button
+ * - add an Instructions button
+ * - add a Continue button if save data is added later
  */
 public final class MenuView {
 
-    public Scene createScene(GameConfig config, Runnable startGame, Runnable openLevelSelect, Runnable exitGame) {
+    /*
+     * Builds the menu scene using the fixed shared size from GameConfig.
+     * Every screen now uses the same width and height.
+     */
+    public Scene createScene(GameConfig config, Runnable startGame, Runnable openSettings, Runnable exitGame) {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(0));
         root.setMinSize(config.getStageWidth(), config.getStageHeight());
         root.setPrefSize(config.getStageWidth(), config.getStageHeight());
+        root.setStyle("-fx-background-color: white;");
 
         Label title = new Label("Mirror Steps");
         title.getStyleClass().add("app-title");
 
-        Label subtitle = new Label("JavaFX platformer framework");
+        Label subtitle = new Label("Minimal JavaFX platformer");
         subtitle.getStyleClass().add("app-subtitle");
 
-        Label description = new Label("This build focuses on navigation, independent level settings and a reusable OOP structure.");
+        Label description = new Label("This version only keeps menu, settings, three levels, one player, and simple blocks.");
         description.getStyleClass().add("small-label");
         description.setWrapText(true);
         description.setMaxWidth(460);
@@ -39,17 +56,22 @@ public final class MenuView {
         startButton.setMaxWidth(Double.MAX_VALUE);
         startButton.setOnAction(event -> startGame.run());
 
-        Button levelSelectButton = new Button("Level Select");
-        levelSelectButton.getStyleClass().add("secondary-button");
-        levelSelectButton.setMaxWidth(Double.MAX_VALUE);
-        levelSelectButton.setOnAction(event -> openLevelSelect.run());
+        Button level1Button = new Button("Open Level 1");
+        level1Button.getStyleClass().add("secondary-button");
+        level1Button.setMaxWidth(Double.MAX_VALUE);
+        level1Button.setOnAction(event -> startGame.run());
+
+        Button settingsButton = new Button("Settings");
+        settingsButton.getStyleClass().add("secondary-button");
+        settingsButton.setMaxWidth(Double.MAX_VALUE);
+        settingsButton.setOnAction(event -> openSettings.run());
 
         Button exitButton = new Button("Exit");
         exitButton.getStyleClass().add("secondary-button");
         exitButton.setMaxWidth(Double.MAX_VALUE);
         exitButton.setOnAction(event -> exitGame.run());
 
-        VBox card = new VBox(14, title, subtitle, description, startButton, levelSelectButton, exitButton);
+        VBox card = new VBox(14, title, subtitle, description, startButton, level1Button, settingsButton, exitButton);
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(44));
         card.prefWidthProperty().bind(root.widthProperty().multiply(0.42));

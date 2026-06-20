@@ -1,30 +1,32 @@
 .root {
     -fx-font-family: "Segoe UI", "Arial";
-    -fx-background-color: linear-gradient(to bottom right, #07111f, #111827);
+    -fx-background-color: white;
 }
 
 .app-title {
-    -fx-text-fill: #f8fafc;
+    -fx-text-fill: #0f172a;
     -fx-font-size: 40px;
     -fx-font-weight: 800;
 }
 
 .app-subtitle {
-    -fx-text-fill: #94a3b8;
+    -fx-text-fill: #475569;
     -fx-font-size: 14px;
 }
 
 .section-title {
-    -fx-text-fill: #e2e8f0;
-    -fx-font-size: 20px;
+    -fx-text-fill: #0f172a;
+    -fx-font-size: 18px;
     -fx-font-weight: 700;
 }
 
 .panel-card {
-    -fx-background-color: rgba(15, 23, 42, 0.86);
+    -fx-background-color: rgba(255, 255, 255, 0.96);
     -fx-background-radius: 18;
     -fx-border-radius: 18;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 18, 0.18, 0, 8);
+    -fx-border-color: #dbe4ee;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.10), 18, 0.18, 0, 8);
 }
 
 .info-card {
@@ -45,27 +47,14 @@
 }
 
 .secondary-button {
-    -fx-background-color: rgba(51, 65, 85, 0.9);
-    -fx-text-fill: #e2e8f0;
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #0f172a;
     -fx-font-size: 14px;
     -fx-font-weight: 600;
     -fx-background-radius: 12;
     -fx-padding: 10 16 10 16;
 }
 
-.level-button {
-    -fx-background-color: rgba(37, 99, 235, 0.18);
-    -fx-text-fill: #f8fafc;
-    -fx-font-size: 14px;
-    -fx-font-weight: 700;
-    -fx-background-radius: 12;
-    -fx-padding: 14 16 14 16;
-    -fx-border-color: rgba(96, 165, 250, 0.35);
-    -fx-border-radius: 12;
-    -fx-border-width: 1;
-}
-
-.level-button:hover,
 .primary-button:hover,
 .secondary-button:hover {
     -fx-cursor: hand;
@@ -73,7 +62,7 @@
 }
 
 .small-label {
-    -fx-text-fill: #cbd5e1;
+    -fx-text-fill: #334155;
     -fx-font-size: 13px;
 }
 
@@ -83,44 +72,31 @@
 }
 
 .sidebar-title {
-    -fx-text-fill: #f8fafc;
+    -fx-text-fill: #0f172a;
     -fx-font-size: 18px;
     -fx-font-weight: 800;
 }
 
 .sidebar-text {
-    -fx-text-fill: #cbd5e1;
+    -fx-text-fill: #334155;
     -fx-font-size: 13px;
 }
 
-.pause-overlay {
-    -fx-background-color: rgba(15, 23, 42, 0.95);
-    -fx-background-radius: 16;
-    -fx-border-radius: 16;
-    -fx-padding: 18;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 22, 0.2, 0, 10);
+.overlay-backdrop {
+    -fx-background-color: rgba(15, 23, 42, 0.18);
+}
+
+.pause-panel {
+    -fx-background-color: rgba(255, 255, 255, 0.98);
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-border-color: #dbe4ee;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.14), 24, 0.22, 0, 10);
 }
 
 .pause-title {
-    -fx-text-fill: #f8fafc;
-    -fx-font-size: 24px;
+    -fx-text-fill: #0f172a;
+    -fx-font-size: 26px;
     -fx-font-weight: 800;
-}
-
-.pause-button {
-    -fx-background-color: rgba(51, 65, 85, 0.95);
-    -fx-text-fill: #e2e8f0;
-    -fx-font-size: 14px;
-    -fx-font-weight: 600;
-    -fx-background-radius: 12;
-    -fx-padding: 10 16 10 16;
-}
-
-.pause-button-primary {
-    -fx-background-color: linear-gradient(to right, #2563eb, #06b6d4);
-    -fx-text-fill: white;
-    -fx-font-size: 14px;
-    -fx-font-weight: 700;
-    -fx-background-radius: 12;
-    -fx-padding: 10 16 10 16;
 }

@@ -1,55 +1,260 @@
 package level.level2;
 
-import config.LevelConfig;
+import config.GameConfig;
+import core.AppRouter;
+import entity.Block;
+import entity.Player;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import javafx.animation.AnimationTimer;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import level.LevelContext;
-import level.LevelModule;
+import javafx.scene.shape.Rectangle;
 
 /*
- * Level 2 owner file.
- * This file belongs to the Level 2 teammate and contains the full configuration,
- * layout, and level-specific extension hooks for the second stage.
+ * Level 2 scene file.
+ *
+ * This file follows the same structure as Level1 and Level3 on purpose.
+ * The repetition is acceptable here because the team priority is readability and
+ * independent editing, not maximum abstraction.
+ *
+ * Relationship notes:
+ * - Level2 is a sibling of Level1 and Level3
+ * - Level2 uses Player and Block instances
+ * - AppRouter handles scene switching outside this file
+ *
+ * Suggested future edits:
+ * - change jump spacing
+ * - add a trickier path to the goal
+ * - add unique Level 2 visuals
  */
-public final class Level2 implements LevelModule {
+public final class Level2 {
 
-    private static final LevelConfig CONFIG = LevelConfig.builder(2, "Level 2 - Moving Bridge")
-            .subtitle("A level focused on moving platforms and timing.")
-            .description("This level introduces moving platforms, generic terrain blocks, and a locked door.")
-            .mechanicLabel("Moving bridge challenge with key and door")
-            .worldSize(960, 540)
-            .gravity(760)
-            .moveSpeed(230)
-            .jumpVelocity(-380)
-            .previousLevelId(1)
-            .nextLevelId(3)
-            .backgroundColor(Color.web("#111827"))
-            .panelColor(Color.web("#1e293b"))
-            .playerColor(Color.web("#facc15"))
-            .platformColor(Color.web("#94a3b8"))
-            .accentColor(Color.web("#60a5fa"))
-            .doorColor(Color.web("#fb7185"))
-            .musicTrackId("moving-bridge")
-            .build();
+    private final GameConfig config;
+    private final AppRouter router;
+    private final Pane root = new Pane();
+    private final List<Block> blocks = new ArrayList<>();
+    private final Set<KeyCode> activeKeys = new HashSet<>();
+    private Player player;
+    private Rectangle goal;
+    private AnimationTimer timer;
+    private boolean changingLevel;
+    private VBox pauseMenu;
+    private boolean paused;
 
-    @Override
-    public int getId() {
-        return 2;
+    public Level2(GameConfig config, AppRouter router) {
+        this.config = config;
+        this.router = router;
     }
 
-    @Override
-    public LevelConfig getConfig() {
-        return CONFIG;
+    /*
+     * Builds the entire Level 2 scene at the shared fixed size.
+     */
+    public Scene createScene() {
+        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        root.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        player = new Player(60, 420, config.getPlayerWidth(), config.getPlayerHeight(), config.getPlayerColor());
+        root.getChildren().add(player.getNode());
+
+        addBlock(0, config.getWorldHeight() - 40, 300, 40);
+        addBlock(400, config.getWorldHeight() - 40, config.getWorldWidth() - 400, 40);
+        addBlock(120, 400, 140, 24);
+        addBlock(310, 320, 140, 24);
+        addBlock(600, 250, 160, 24);
+
+        goal = new Rectangle(36, 72, config.getGoalColor());
+        goal.setLayoutX(config.getWorldWidth() - 90);
+        goal.setLayoutY(178);
+        root.getChildren().add(goal);
+
+        pauseMenu = createPauseMenu("Level 2", 1, 3);
+        pauseMenu.setVisible(false);
+        pauseMenu.setManaged(false);
+
+        StackPane overlay = new StackPane(pauseMenu);
+        overlay.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        overlay.setMinSize(config.getWorldWidth(), config.getWorldHeight());
+        overlay.setVisible(false);
+        overlay.setManaged(false);
+        overlay.getStyleClass().add("overlay-backdrop");
+
+        StackPane container = new StackPane(root, overlay);
+        StackPane.setAlignment(pauseMenu, Pos.CENTER);
+
+        Scene scene = new Scene(container, config.getStageWidth(), config.getStageHeight());
+        installInput(scene);
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                togglePause(overlay, !paused);
+                return;
+            }
+            if (!paused) {
+                activeKeys.add(event.getCode());
+            }
+        });
+        scene.setOnKeyReleased(event -> activeKeys.remove(event.getCode()));
+        start();
+        return scene;
     }
 
-    @Override
-    public void build(LevelContext context) {
-        context.createTerrainBlock(0, context.getConfig().getWorldHeight() - 32, 300, 32);
-        context.createTerrainBlock(400, context.getConfig().getWorldHeight() - 32, 560, 32);
-        context.createTerrainBlock(120, 400, 140, 24);
-        context.createMovingPlatform(310, 320, 140, 24, 120, 2.2);
-        context.createTerrainBlock(600, 250, 160, 24);
-        context.createKeyItem(210, 368, 28, 28, "bridge-key");
-        context.createDoor(context.getConfig().getWorldWidth() - 92, 150, 48, 90, "bridge-key", context.getConfig().getNextLevelId());
-        context.createPlayer(72, context.getConfig().getWorldHeight() - 92);
+    private VBox createPauseMenu(String titleText, int previousLevel, int nextLevel) {
+        Label title = new Label(titleText);
+        title.getStyleClass().add("pause-title");
+
+        Button menuButton = new Button("Menu");
+        menuButton.getStyleClass().add("secondary-button");
+        menuButton.setOnAction(event -> switchToMenu());
+
+        Button previousButton = new Button("Prev");
+        previousButton.getStyleClass().add("secondary-button");
+        previousButton.setDisable(previousLevel == 0);
+        previousButton.setOnAction(event -> switchToLevel(previousLevel));
+
+        Button nextButton = new Button("Next");
+        nextButton.getStyleClass().add("primary-button");
+        nextButton.setDisable(nextLevel == 0);
+        nextButton.setOnAction(event -> switchToLevel(nextLevel));
+
+        Button resumeButton = new Button("Resume");
+        resumeButton.getStyleClass().add("secondary-button");
+        resumeButton.setOnAction(event -> togglePause((StackPane) pauseMenu.getParent(), false));
+
+        VBox menu = new VBox(14, title, resumeButton, menuButton, previousButton, nextButton);
+        menu.setAlignment(Pos.CENTER);
+        menu.setPadding(new Insets(28));
+        menu.setMaxWidth(260);
+        menu.getStyleClass().add("pause-panel");
+        return menu;
+    }
+
+    /*
+     * Add one platform block to this level.
+     */
+    private void addBlock(double x, double y, double width, double height) {
+        Block block = new Block(x, y, width, height, config.getBlockColor());
+        blocks.add(block);
+        root.getChildren().add(block.getNode());
+    }
+
+    private void installInput(Scene scene) {
+        timer = new AnimationTimer() {
+            private long lastFrame = -1;
+
+            @Override
+            public void handle(long now) {
+                if (lastFrame < 0) {
+                    lastFrame = now;
+                    return;
+                }
+
+                double deltaSeconds = (now - lastFrame) / 1_000_000_000.0;
+                lastFrame = now;
+                update(deltaSeconds);
+            }
+        };
+    }
+
+    private void update(double deltaSeconds) {
+        if (paused) {
+            return;
+        }
+        player.handleInput(activeKeys, config.getControlConfig(), config.getMoveSpeed(), config.getJumpVelocity());
+        player.applyPhysics(deltaSeconds, config.getGravity());
+        resolveCollisions();
+        clampPlayer();
+        checkGoal(3);
+    }
+
+    private void togglePause(StackPane overlay, boolean newState) {
+        paused = newState;
+        overlay.setVisible(newState);
+        overlay.setManaged(newState);
+        pauseMenu.setVisible(newState);
+        pauseMenu.setManaged(newState);
+        if (newState) {
+            activeKeys.clear();
+        }
+    }
+
+    /*
+     * Simple landing-only collision model for teaching purposes.
+     */
+    private void resolveCollisions() {
+        player.setOnGround(false);
+
+        for (Block block : blocks) {
+            if (!player.getBounds().intersects(block.getBounds())) {
+                continue;
+            }
+
+            double previousBottom = player.getPreviousY() + player.getHeight();
+            if (player.getVelocityY() >= 0 && previousBottom <= block.getY() + 16) {
+                player.landOn(block.getY());
+            }
+        }
+    }
+
+    private void clampPlayer() {
+        if (player.getX() < 0) {
+            player.setPosition(0, player.getY());
+        }
+
+        if (player.getX() > config.getWorldWidth() - player.getWidth()) {
+            player.setPosition(config.getWorldWidth() - player.getWidth(), player.getY());
+        }
+
+        if (player.getY() > config.getWorldHeight() + 100) {
+            player.resetToSpawn();
+        }
+    }
+
+    private void checkGoal(int nextLevel) {
+        if (!changingLevel && player.getBounds().intersects(goal.getBoundsInParent())) {
+            switchToLevel(nextLevel);
+        }
+    }
+
+    private void switchToLevel(int level) {
+        if (changingLevel || level == 0) {
+            return;
+        }
+        changingLevel = true;
+        stop();
+        router.showLevel(level);
+    }
+
+    private void switchToMenu() {
+        if (changingLevel) {
+            return;
+        }
+        changingLevel = true;
+        stop();
+        router.showMenu();
+    }
+
+    private void start() {
+        if (timer != null) {
+            timer.start();
+        }
+    }
+
+    private void stop() {
+        if (timer != null) {
+            timer.stop();
+        }
     }
 }

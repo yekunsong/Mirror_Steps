@@ -6,9 +6,29 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 /*
- * Base class for every renderable world object.
- * This entity-layer class keeps position, size, and JavaFX node synchronization in one place.
- * Subclasses should add only generic behavior that is useful across the entity hierarchy.
+ * Parent class for basic drawable game objects.
+ *
+ * Parent-child relationship:
+ * - GameObject is the parent class
+ * - Player and Block are child classes
+ *
+ * This inheritance exists only to share the repeated data that both child classes need:
+ * - x/y position
+ * - width/height
+ * - one JavaFX Rectangle node
+ * - helper methods for moving and syncing the node
+ *
+ * Why this class is still useful:
+ * - it avoids copy-pasting the same position/render code into Player and Block
+ * - it keeps child classes focused on their own behavior
+ *
+ * Future extension directions:
+ * - add rotation support
+ * - add visibility toggles
+ * - add image-based rendering instead of plain rectangles
+ *
+ * If your team wants a new simple object later, such as a checkpoint or hazard,
+ * it can extend GameObject in the same way as Block currently does.
  */
 public abstract class GameObject {
 
@@ -32,6 +52,9 @@ public abstract class GameObject {
     public void update(double deltaSeconds) {
     }
 
+    /*
+     * Returns the JavaFX node that levels add into their Pane.
+     */
     public Node getNode() {
         return view;
     }
@@ -74,6 +97,9 @@ public abstract class GameObject {
         return view;
     }
 
+    /*
+     * Keeps logical position and on-screen node position consistent.
+     */
     private void syncView() {
         view.setLayoutX(x);
         view.setLayoutY(y);

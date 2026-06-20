@@ -1,237 +1,198 @@
-# Mirror Steps Team Framework Guide
+# Minimal JavaFX Platformer Framework
 
-## 1. Goal
+## Goal
 
-This project is organized so that one person can own the shared visual and audio direction, while each remaining team member can own one level independently.
+This version keeps only the minimum structure needed for a team platformer assignment:
 
-The architecture separates:
+- one `Menu`
+- one `Settings`
+- three levels
+- one player
+- simple blocks and one goal area per level
 
-- shared runtime code
-- shared UI code
-- shared game object code
-- level-specific module code
+## Final Structure
 
-The key design goal is to keep level work isolated. A team member should be able to modify their own level package without touching other levels or the core runtime.
+```text
+src/
+  config/
+    GameConfig.java
 
-## 2. Shared Parts
+  core/
+    Main.java
+    AppRouter.java
+    application.css
 
-### `application`
-This package contains startup code only.
+  entity/
+    GameObject.java
+    Player.java
+    Block.java
 
-- `Main`
-  - Launches the JavaFX app.
-  - Should stay minimal.
+  level/
+    level1/Level1.java
+    level2/Level2.java
+    level3/Level3.java
 
-- `GameApp`
-  - Creates global services.
-  - Connects the scene manager to the runtime.
+  ui/
+    MenuView.java
+    SettingsView.java
+```
 
-### `core`
-This package controls application state and scene switching.
+## Team Ownership
 
-- `GameManager`
-  - Stores shared runtime references.
-  - Keeps track of the current level session and game state.
+- Member 1: `level.level1.Level1`
+- Member 2: `level.level2.Level2`
+- Member 3: `level.level3.Level3`
+- Member 4: `ui.MenuView`
+- Member 5: `ui.SettingsView`
 
-- `SceneManager`
-  - Switches between menu, level select, and game scenes.
-  - Should be the only place that decides which top-level scene is shown.
+Shared files that should be changed carefully:
 
-- `GameState`
-  - Describes whether the game is in menu, level select, playing, or paused mode.
+- `core.Main`
+- `core.AppRouter`
+- `config.GameConfig`
+- `entity.Player`
+- `entity.Block`
 
-### `config`
-This package contains reusable settings objects.
+## Rules
 
-- `GameConfig`
-  - Global window and control defaults.
+- `Main` is the only entry point
+- `AppRouter` only switches scenes
+- each level file contains its own layout, player spawn, goal, buttons, and update loop
+- `Player` already includes the old movement logic from `Character`
+- no enemy, key, door, pause, audio, runtime, factory, or builder layer remains
 
-- `ControlConfig`
-  - Shared control mapping.
+## Practical Rule
 
-- `LevelConfig`
-  - Per-level tuning and theme values.
+If a change belongs to one level only, keep it in that level file.
+If a change affects all levels, put it in `GameConfig`, `Player`, or `AppRouter`.
 
-### `entity`
-This package contains reusable world objects.
+## Git Workflow
 
-- `GameObject`
-  - Base renderable object.
+### Recommended rule
 
-- `Character`
-  - Shared movement and spawn state for moving characters.
+For this project, the safer workflow is:
 
-- `Player`
-  - Player input and movement behavior.
+1. modify code locally
+2. test locally
+3. `commit` locally
+4. wait for the team leader or repository owner to review and agree
+5. `push` to GitHub
 
-- `Enemy`, `PatrolEnemy`
-  - Enemy framework and one sample movement type.
+This is better than pushing immediately because:
 
-- `Collectible`, `KeyItem`
-  - Collectible framework.
+- it keeps each member's work traceable
+- it is easier to review one feature at a time
+- if something breaks, the team can identify which commit changed it
 
-- `Platform`, `MovingPlatform`, `Portal`
-  - Core world objects that level mechanics can reuse.
+### Recommended team process
 
-### `ui`
-This package contains non-gameplay screens.
+Each member should follow this process:
 
-- `MenuView`
-  - Main menu.
+1. clone the repository
+2. open the project locally
+3. implement only their own assigned part
+4. run and check the game locally
+5. commit with a clear message
+6. wait for approval from the team leader
+7. push to GitHub
 
-- `LevelSelectView`
-  - Level selection screen.
+### First-time setup
 
-- `PauseView`
-  - ESC overlay inside a level.
+Clone the repository:
 
-- `SettingsView`
-  - Placeholder for audio, control, and visual settings.
+```powershell
+git clone https://github.com/yekunsong/Java_Code.git
+```
 
-### `audio`
-This package contains the audio service.
+Enter the project folder:
 
-- `AudioManager`
-  - Shared music and sound effect facade.
-  - Currently a placeholder, ready for real audio assets later.
+```powershell
+cd Java_Code
+```
 
-## 3. Level Ownership Model
+Check current status:
 
-Each level is now treated as an independent module package:
+```powershell
+git status
+```
 
-- `level.level1`
-- `level.level2`
-- `level.level3`
-- `level.level4`
+### Daily update before coding
 
-Each level package should contain:
+Before starting new work, each member should get the newest code:
 
-- one module class
-- one mechanic class
-- any helper classes needed only by that level
+```powershell
+git pull origin main
+```
 
-This is the part that makes team work easier.
+This avoids overwriting other teammates' changes.
 
-### What a level module does
+### Commit after finishing one feature
 
-A level module defines:
+Check changed files:
 
-- its id
-- its config
-- which mechanic implementation it uses
+```powershell
+git status
+```
 
-### What a level mechanic does
+Stage the files:
 
-A level mechanic defines:
+```powershell
+git add .
+```
 
-- how the level is built
-- what special mechanic it uses
-- any level-specific key handling
-- optional per-frame logic
+Create a commit:
 
-### Why this is better for team division
+```powershell
+git commit -m "Refactor level 1 layout"
+```
 
-Each team member can work inside their own level package without editing the shared runtime.
+Commit message examples:
 
-For example, a level owner can change:
+- `Add level 2 platform layout`
+- `Update settings screen`
+- `Refactor player movement`
+- `Fix level 3 goal position`
 
-- platform layout
-- enemy behavior
-- world toggle logic
-- portal locking logic
-- unique interaction keys
+### Push only after approval
 
-without affecting the other levels.
+After the team leader agrees:
 
-## 4. Shared Runtime
+```powershell
+git push origin main
+```
 
-### `level.api`
-This package defines the contract between shared runtime and level-specific content.
+If your team later wants a safer workflow, use branches instead of pushing directly to `main`.
 
-- `LevelContext`
-  - The API a mechanic uses to build and control its level.
+### Suggested branch workflow for teammates
 
-- `LevelMechanic`
-  - The behavior contract for a level.
+Example:
 
-- `LevelModule`
-  - The definition of a playable level module.
+```powershell
+git checkout -b feature/level1-layout
+```
 
-### `level.runtime`
-This package contains the shared game loop for levels.
+Then work normally:
 
-- `LevelRuntime`
-  - Handles the actual scene, pause overlay, collisions, player physics, and transition logic.
-  - Should remain generic.
-  - Level-specific content should not be coded directly here.
+```powershell
+git add .
+git commit -m "Update level 1 layout"
+git push origin feature/level1-layout
+```
 
-### `level.factory`
-This package contains the level registry.
+This is safer because each member can work independently before merging.
 
-- `LevelFactory`
-  - Returns the correct module for a selected level id.
-  - Register new levels here when the team adds new stages.
+### What each teammate should avoid
 
-## 5. How Team Members Should Work
+- Do not edit shared files unless necessary
+- Do not push unfinished code directly without telling the team
+- Do not mix many unrelated changes into one commit
+- Do not overwrite others' work by skipping `git pull`
 
-### Visual and music owner
-This person should mainly work on:
+### Recommended ownership with Git
 
-- `application.css`
-- `AudioManager`
-- `MenuView`
-- `SettingsView`
-- global theme values in `GameConfig`
-
-### Level owners
-Each of the four level owners should focus on their own level package only.
-
-Recommended workflow for a level owner:
-
-1. Edit the module class for the level.
-2. Edit the mechanic class for the unique gameplay logic.
-3. Add local helper classes only inside that level package if needed.
-4. Register or update the level in `LevelFactory` if required.
-
-## 6. What Should Stay Shared
-
-These classes should not be rewritten by every level owner:
-
-- `GameManager`
-- `SceneManager`
-- `LevelRuntime`
-- `GameObject`
-- `Character`
-- `Player`
-- `AudioManager`
-
-They are shared infrastructure.
-
-## 7. How To Add A New Level
-
-1. Create a new package under `level`, for example `level.level5`.
-2. Add a module class implementing `LevelModule`.
-3. Add a mechanic class implementing `LevelMechanic`.
-4. Put all level-specific content in that package.
-5. Register the module in `LevelFactory`.
-
-## 8. How To Add A Unique Mechanic
-
-Mechanics are the main extension point.
-
-Examples:
-
-- mirror world toggle
-- moving bridge
-- key-and-door unlock
-- enemy patrol route
-- gravity switch
-
-Use `build()` for static setup and `update()` / key hooks for the dynamic part.
-
-## 9. Practical Rule For Editing
-
-If a change is only relevant to one level, keep it inside that level package.
-
-If a change is used by all levels, place it in the shared runtime or shared entity code.
-
+- Level 1 owner mainly changes `src/level/level1/Level1.java`
+- Level 2 owner mainly changes `src/level/level2/Level2.java`
+- Level 3 owner mainly changes `src/level/level3/Level3.java`
+- Menu owner mainly changes `src/ui/MenuView.java`
+- Settings owner mainly changes `src/ui/SettingsView.java`
+- Shared structure changes should be discussed before commit
