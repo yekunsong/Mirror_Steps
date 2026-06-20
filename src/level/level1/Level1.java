@@ -25,29 +25,27 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 /*
- * Level 1 scene file.
+ * Concrete scene implementation for Level 1.
  *
- * This file is intentionally self-contained so the Level 1 owner can maintain it
- * without reading shared runtime or factory code.
+ * Architectural role:
+ * - This class contains the full implementation of the first playable stage.
+ * - It is intentionally self-contained so that one contributor can maintain the
+ *   level without needing to understand an additional runtime layer.
  *
- * Responsibilities of this file:
- * - create the Level 1 layout
- * - create the player
- * - create the goal area
- * - run the update loop
- * - handle collisions for this level
- * - trigger scene switching through AppRouter
+ * Responsibilities:
+ * - build the level layout
+ * - create the player and goal
+ * - maintain the per-frame update loop
+ * - handle collision resolution for this level
+ * - request scene transitions through AppRouter
  *
- * Relationship notes:
- * - Level1 is not a child of Level2 or Level3
- * - all three level classes are independent siblings
- * - Level1 uses Player and Block objects rather than inheriting from them
+ * Relationship note:
+ * - Level1, Level2, and Level3 are sibling classes. None of them inherits from the
+ *   others, because the current design favors clarity over extra abstraction.
  *
- * Future extension directions:
- * - change the block layout
- * - add decorative background nodes
- * - add unique mechanics only for Level 1
- * - add text hints for beginner movement
+ * Modification guidance:
+ * - Edit this file when changing Level 1 only.
+ * - Edit shared files only when the intended change affects all levels.
  */
 public final class Level1 {
 
@@ -69,8 +67,7 @@ public final class Level1 {
     }
 
     /*
-     * Builds the full scene for Level 1.
-     * The scene size is fixed to the same width and height used by Menu and Settings.
+     * Builds and returns the complete Level 1 scene.
      */
     public Scene createScene() {
         root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
@@ -150,8 +147,7 @@ public final class Level1 {
     }
 
     /*
-     * Level-local helper for adding terrain.
-     * If the team wants new platforms, this is one of the simplest places to edit.
+     * Creates and registers one solid terrain block for this level.
      */
     private void addBlock(double x, double y, double width, double height) {
         Block block = new Block(x, y, width, height, config.getBlockColor());
@@ -160,7 +156,7 @@ public final class Level1 {
     }
 
     /*
-     * Registers keyboard state and creates the timer-based game loop.
+     * Creates the timer-based update loop used by this level.
      */
     private void installInput(Scene scene) {
         timer = new AnimationTimer() {
@@ -181,7 +177,7 @@ public final class Level1 {
     }
 
     /*
-     * One frame of gameplay update.
+     * Executes one frame of gameplay logic.
      */
     private void update(double deltaSeconds) {
         if (paused) {
@@ -206,8 +202,7 @@ public final class Level1 {
     }
 
     /*
-     * Handles simple top-side landing collisions between player and blocks.
-     * This is deliberately simple so the logic is easy for students to read.
+     * Resolves simple landing collisions between the player and terrain blocks.
      */
     private void resolveCollisions() {
         player.setOnGround(false);
@@ -225,7 +220,7 @@ public final class Level1 {
     }
 
     /*
-     * Keeps the player inside the play area and respawns them if they fall off-screen.
+     * Constrains the player to the world bounds and resets the player after a fall.
      */
     private void clampPlayer() {
         if (player.getX() < 0) {
@@ -242,7 +237,7 @@ public final class Level1 {
     }
 
     /*
-     * Automatic level completion: touching the goal changes to the next level.
+     * Changes to the next level when the player touches the goal.
      */
     private void checkGoal(int nextLevel) {
         if (!changingLevel && player.getBounds().intersects(goal.getBoundsInParent())) {
@@ -251,8 +246,8 @@ public final class Level1 {
     }
 
     /*
-     * Scene changes are protected by `changingLevel` so one collision does not trigger
-     * multiple scene switches in the same frame.
+     * Requests a level transition while preventing duplicate scene changes in the same
+     * frame.
      */
     private void switchToLevel(int level) {
         if (changingLevel || level == 0) {
@@ -273,7 +268,7 @@ public final class Level1 {
     }
 
     /*
-     * Timer start/stop helpers are separated to keep scene switching safe.
+     * Starts the animation timer associated with this level scene.
      */
     private void start() {
         if (timer != null) {
@@ -281,6 +276,9 @@ public final class Level1 {
         }
     }
 
+    /*
+     * Stops the animation timer before leaving the scene.
+     */
     private void stop() {
         if (timer != null) {
             timer.stop();

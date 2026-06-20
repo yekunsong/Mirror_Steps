@@ -10,25 +10,26 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
 /*
- * Simplified Settings screen.
+ * Settings view.
  *
- * This page is currently a shared information page rather than a full settings system.
- * It exists so the UI owner in the team has a clear file to extend later.
+ * Architectural role:
+ * - This class constructs the settings scene.
+ * - In the current simplified framework, it functions as a placeholder page and
+ *   extension point rather than a complete settings subsystem.
  *
- * Relationship notes:
- * - this class is not a child of MenuView
- * - AppRouter opens this screen and provides the back callback
+ * Relationship note:
+ * - AppRouter opens this scene and supplies the callback required to return to the
+ *   menu scene.
  *
- * Future extension directions:
- * - audio sliders
- * - custom key binding display
- * - fullscreen toggle if the team later wants it back
- * - difficulty or accessibility options
+ * Extension guidance:
+ * - A future revision can add audio controls, accessibility settings, key-binding
+ *   summaries, or display options here while keeping the overall structure stable.
  */
 public final class SettingsView {
 
     /*
-     * Builds the settings screen using exactly the same window size as every other scene.
+     * Builds and returns the settings scene using the same fixed dimensions as all
+     * other application scenes.
      */
     public Scene createScene(GameConfig config, Runnable backToMenu) {
         BorderPane root = new BorderPane();

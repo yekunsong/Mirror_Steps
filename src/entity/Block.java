@@ -3,24 +3,22 @@ package entity;
 import javafx.scene.paint.Color;
 
 /*
- * Simple platform or terrain block.
+ * Concrete terrain object representing a platform or solid block.
  *
- * Parent-child relationship:
- * - Block extends GameObject
- * - Block does not add new behavior yet
+ * Inheritance structure:
+ * - Block extends GameObject.
+ * - Block currently adds no additional state because the simplified framework only
+ *   needs a static collision surface.
  *
- * Why keep this as a separate child class even though it is small:
- * - the class name is clearer than reusing GameObject directly in level files
- * - future shared block behavior can be added here without touching all levels
+ * Reason this class exists as a separate type:
+ * - The name `Block` is clearer in level code than instantiating `GameObject`
+ *   directly.
+ * - If a later revision adds special block behavior, that behavior can be added here
+ *   without rewriting the level files that already depend on this type.
  *
- * Future extension directions:
- * - different block colors per level
- * - slippery blocks
- * - disappearing blocks
- * - spike or hazard subclasses if the game grows later
- *
- * Right now, if you want to add a platform in a level, edit that level file and call
- * the local `addBlock(...)` helper there.
+ * Typical modification point:
+ * - To change where a block appears, edit the relevant level file.
+ * - To change how all blocks behave, edit this class or GameConfig.
  */
 public final class Block extends GameObject {
 

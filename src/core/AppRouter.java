@@ -10,25 +10,32 @@ import ui.MenuView;
 import ui.SettingsView;
 
 /*
- * Simple scene router for the project.
+ * Central scene router for the simplified framework.
  *
- * This class is not a gameplay class and does not contain physics or level rules.
- * Its only job is to switch between screens while keeping the Stage configuration
- * consistent.
+ * Architectural role:
+ * - This class owns all top-level scene switching for the application.
+ * - It prevents navigation code from being scattered across UI classes and level
+ *   classes, which makes maintenance much easier for a student team.
  *
- * Relationship notes:
- * - AppRouter creates MenuView and SettingsView directly
- * - AppRouter creates Level1/2/3 directly
- * - Levels call back into AppRouter when they want to switch scene
+ * Objects created by this class:
+ * - MenuView
+ * - SettingsView
+ * - Level1
+ * - Level2
+ * - Level3
  *
- * Why keep this file:
- * - it removes scene-switching code from UI and level files
- * - it keeps startup and navigation simple without reintroducing old managers
+ * Dependency direction:
+ * - UI and level classes do not create the Stage directly.
+ * - Instead, they call back into AppRouter when a scene transition is required.
  *
- * Future extension directions:
- * - add a Credits page
- * - add a Game Complete page
- * - add a simple loading scene if the project grows later
+ * Design constraint:
+ * - This class must remain focused on navigation and stage configuration only.
+ * - Gameplay physics, input interpretation, collision logic, and level layout must
+ *   remain outside this class.
+ *
+ * Extension guidance:
+ * - A future version can add credits, an ending scene, or a loading scene here
+ *   without changing the rest of the architecture.
  */
 public final class AppRouter {
 
@@ -44,7 +51,9 @@ public final class AppRouter {
     }
 
     /*
-     * Opens the main menu with the same fixed size as every other screen.
+     * Opens the main menu scene.
+     *
+     * The scene is always shown with the same fixed stage size as the other scenes.
      */
     public void showMenu() {
         Scene scene = menuView.createScene(config, () -> showLevel(1), this::showSettings, stage::close);
@@ -52,8 +61,10 @@ public final class AppRouter {
     }
 
     /*
-     * Opens the simplified Settings page.
-     * This page currently acts as a shared UI placeholder and documentation page.
+     * Opens the settings scene.
+     *
+     * In the current simplified version, this scene acts as a shared information and
+     * future-extension page rather than a full settings system.
      */
     public void showSettings() {
         Scene scene = settingsView.createScene(config, this::showMenu);
@@ -61,8 +72,10 @@ public final class AppRouter {
     }
 
     /*
-     * Creates one of the three level scenes.
-     * If an invalid level id is given, we safely return to Level 1.
+     * Opens one of the three playable levels.
+     *
+     * Invalid level identifiers are resolved safely by returning to Level 1, which
+     * avoids application failure caused by an incorrect routing call.
      */
     public void showLevel(int levelId) {
         Scene scene = switch (levelId) {
@@ -81,8 +94,10 @@ public final class AppRouter {
         }
 
         /*
-         * Force every scene to use the same window size.
-         * This is the main part of the fixed-size refactor.
+         * Apply the shared fixed-size window policy before showing the scene.
+         *
+         * This ensures that menu screens, settings screens, and gameplay scenes are
+         * displayed with the same visible dimensions.
          */
         stage.setWidth(config.getStageWidth());
         stage.setHeight(config.getStageHeight());

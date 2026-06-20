@@ -10,28 +10,27 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
 /*
- * Main menu screen.
+ * Main menu view.
  *
- * This class is a UI file only.
- * It should not contain gameplay physics, level collision logic, or player logic.
+ * Architectural role:
+ * - This class is responsible only for constructing the menu user interface.
+ * - It must not contain gameplay rules, movement code, collision logic, or direct
+ *   stage navigation logic.
  *
- * Relationship notes:
- * - MenuView does not know how to switch scenes by itself
- * - AppRouter passes callback methods into this class
- * - when a button is pressed, MenuView only calls the callback
+ * Interaction model:
+ * - The router passes callback functions into this class.
+ * - Each button triggers one callback.
+ * - The class therefore remains a view layer rather than becoming a controller for
+ *   the whole application.
  *
- * This makes the screen easier for one teammate to maintain independently.
- *
- * Future extension directions:
- * - add a Credits button
- * - add an Instructions button
- * - add a Continue button if save data is added later
+ * Extension guidance:
+ * - A future revision can add additional buttons such as Credits, Instructions, or
+ *   Continue without changing the core architecture.
  */
 public final class MenuView {
 
     /*
-     * Builds the menu scene using the fixed shared size from GameConfig.
-     * Every screen now uses the same width and height.
+     * Builds and returns the menu scene using the shared fixed-size window settings.
      */
     public Scene createScene(GameConfig config, Runnable startGame, Runnable openSettings, Runnable exitGame) {
         BorderPane root = new BorderPane();

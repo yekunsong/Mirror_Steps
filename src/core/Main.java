@@ -5,25 +5,27 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 
 /*
- * Single JavaFX entry point for the whole project.
+ * JavaFX application entry point.
  *
- * This class replaces the older multi-step startup chain.
- * The startup logic is now intentionally short:
- * 1. create one shared GameConfig
- * 2. create one AppRouter
- * 3. open the Menu scene
+ * Architectural role:
+ * - This class is the only startup class that JavaFX needs to launch the project.
+ * - Its responsibility is intentionally narrow: create shared startup objects and
+ *   transfer control to the scene router.
  *
- * Relationship notes:
- * - Main is not a parent class of AppRouter
- * - Main only creates shared objects, then hands control to AppRouter
+ * Call sequence:
+ * 1. JavaFX calls `start(Stage stage)`.
+ * 2. The application creates a single shared GameConfig instance.
+ * 3. The application creates a single AppRouter instance.
+ * 4. The router opens the initial Menu scene.
  *
- * Future extension directions:
- * - add icon loading
- * - add save file loading
- * - add splash screen support
+ * Relationship note:
+ * - Main does not contain gameplay logic and does not manage scene switching itself.
+ * - Main is not a parent of AppRouter; it only creates the router and passes the
+ *   JavaFX Stage into it.
  *
- * If you want to change the fixed window size, edit the numbers below or move them
- * into constants if your team prefers.
+ * Extension guidance:
+ * - If startup behavior must be expanded later, this is the correct place to add
+ *   tasks such as icon loading, save file loading, or splash screen handling.
  */
 public final class Main extends Application {
 

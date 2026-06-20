@@ -4,27 +4,30 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 
 /*
- * Global application settings for the whole project.
+ * Central configuration object for the simplified JavaFX game framework.
  *
- * This class is intentionally kept as the single shared configuration entry point
- * so teammates do not need to search across many files to find constants.
+ * Architectural role:
+ * - This class stores configuration values that must remain consistent across the
+ *   entire application, including menu screens, settings screens, and all levels.
+ * - It replaces the need for multiple small configuration files so that the project
+ *   remains easy to understand for a student team.
  *
- * Current responsibilities:
- * - fixed window size used by every screen
- * - shared world size used by every level
- * - player movement constants
- * - shared colors
- * - key bindings
+ * Main categories of data stored here:
+ * - application title
+ * - fixed window width and height
+ * - logical game world width and height
+ * - default player size and physics constants
+ * - shared colors used by multiple scenes
+ * - keyboard mappings
  *
- * Team rule:
- * - if a value affects every level or every screen, add it here
- * - if a value only affects one specific level, keep it inside that level file
+ * Maintenance rule:
+ * - Add a value here only if that value is intended to affect the entire project.
+ * - If a value is specific to one level only, keep that value inside the level file
+ *   rather than moving it into this shared configuration class.
  *
- * Future extension directions:
- * - add volume defaults
- * - add theme colors for more screens
- * - add difficulty presets
- * - add a different fixed window size for presentation/demo mode
+ * Extension guidance:
+ * - A future version can add audio defaults, accessibility options, difficulty
+ *   presets, or multiple display profiles here without changing the overall design.
  */
 public final class GameConfig {
 
@@ -44,9 +47,11 @@ public final class GameConfig {
     private final ControlConfig controlConfig = new ControlConfig();
 
     /*
-     * The constructor now receives one fixed width and one fixed height.
-     * Unlike the old full-screen version, we do not read the monitor size anymore.
-     * This keeps Menu, Settings, and all Level scenes consistent.
+     * Creates one immutable configuration object for the application session.
+     *
+     * The window size is now fixed at startup instead of being derived from the
+     * monitor size. This decision keeps all scenes visually consistent and removes
+     * the previous mismatch between menu screens and gameplay scenes.
      */
     public GameConfig(double stageWidth, double stageHeight) {
         this.title = "Mirror Steps";
@@ -113,14 +118,18 @@ public final class GameConfig {
     }
 
     /*
-     * Shared input mapping for the whole game.
+     * Keyboard mapping configuration shared by all scenes.
      *
-     * This nested class is not a subclass relationship with any gameplay class.
-     * It is only grouped here because key bindings are global configuration data.
+     * Design note:
+     * - This is a nested helper type, not a gameplay class and not part of the
+     *   inheritance hierarchy.
+     * - It remains inside GameConfig because the key mapping is application-wide
+     *   configuration rather than level-specific logic.
      *
-     * If your team wants to change controls later, this is the first place to edit.
-     * If you need more actions in the future, add more `is...` methods here and then
-     * call them from Player or a level file.
+     * Modification guidance:
+     * - If the team wants to change movement keys, update the relevant methods here.
+     * - If a new action is introduced later, add a new method and then call that
+     *   method from Player or the relevant level scene.
      */
     public static final class ControlConfig {
 

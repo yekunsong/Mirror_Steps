@@ -25,21 +25,23 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 /*
- * Level 2 scene file.
+ * Concrete scene implementation for Level 2.
  *
- * This file follows the same structure as Level1 and Level3 on purpose.
- * The repetition is acceptable here because the team priority is readability and
- * independent editing, not maximum abstraction.
+ * Architectural role:
+ * - This class contains the second playable stage.
+ * - Its structure intentionally mirrors Level1 and Level3 so that different team
+ *   members can work on separate levels with minimal cross-dependency.
  *
- * Relationship notes:
- * - Level2 is a sibling of Level1 and Level3
- * - Level2 uses Player and Block instances
- * - AppRouter handles scene switching outside this file
+ * Responsibilities:
+ * - define the Level 2 terrain layout
+ * - create and update the player
+ * - handle collision resolution
+ * - request navigation through AppRouter
  *
- * Suggested future edits:
- * - change jump spacing
- * - add a trickier path to the goal
- * - add unique Level 2 visuals
+ * Modification guidance:
+ * - Edit this file for Level 2-specific changes only.
+ * - Preserve the overall method structure unless the same change must also be made in
+ *   Level1 and Level3.
  */
 public final class Level2 {
 
@@ -61,7 +63,7 @@ public final class Level2 {
     }
 
     /*
-     * Builds the entire Level 2 scene at the shared fixed size.
+     * Builds and returns the complete Level 2 scene.
      */
     public Scene createScene() {
         root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
@@ -142,7 +144,7 @@ public final class Level2 {
     }
 
     /*
-     * Add one platform block to this level.
+     * Creates and registers one solid terrain block for this level.
      */
     private void addBlock(double x, double y, double width, double height) {
         Block block = new Block(x, y, width, height, config.getBlockColor());
@@ -191,7 +193,7 @@ public final class Level2 {
     }
 
     /*
-     * Simple landing-only collision model for teaching purposes.
+     * Resolves simple landing collisions between the player and terrain blocks.
      */
     private void resolveCollisions() {
         player.setOnGround(false);

@@ -6,30 +6,29 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 
 /*
- * Player object used by all three levels.
+ * Playable character object shared by all levels.
  *
- * Parent-child relationship:
- * - Player extends GameObject
- * - Character was intentionally merged into Player to keep the project simpler
+ * Inheritance structure:
+ * - Player extends GameObject.
+ * - The previous Character layer was intentionally removed and merged into this class
+ *   so that the movement model is easier for students to read and modify.
  *
- * That means this class now owns:
- * - rendering inherited from GameObject
- * - movement speed state
- * - jump and gravity state
- * - spawn point data
- * - reset behavior
+ * Current responsibilities:
+ * - store spawn position
+ * - store horizontal and vertical velocity
+ * - interpret movement-related input
+ * - apply gravity-based motion
+ * - reset the player when necessary
  *
- * This file is the main place to edit if your team wants to change:
- * - how fast the player moves
- * - jump behavior
- * - respawn logic
- * - future animation state
+ * Maintenance guidance:
+ * - Modify this class when the team wants to change player-wide movement behavior.
+ * - Do not put level-specific rules here; those rules should remain inside the level
+ *   classes.
  *
- * Future extension directions:
- * - add facing direction
- * - add double jump
- * - add wall jump
- * - add sprite/image rendering
+ * Extension guidance:
+ * - Future features such as animations, directional sprites, double jump, wall jump,
+ *   or checkpoint-based respawn can be added here without changing the inheritance
+ *   model again.
  */
 public final class Player extends GameObject {
 
@@ -48,8 +47,10 @@ public final class Player extends GameObject {
     }
 
     /*
-     * Reads shared key state and converts it into horizontal and jump motion.
-     * Levels do not need to duplicate this logic.
+     * Converts the current keyboard state into movement intent.
+     *
+     * This method does not move the Player directly. Instead, it updates velocity
+     * fields, which are later applied by `applyPhysics(...)`.
      */
     public void handleInput(Set<KeyCode> activeKeys, GameConfig.ControlConfig controls, double moveSpeed, double jumpVelocity) {
         boolean left = activeKeys.stream().anyMatch(controls::isMoveLeft);
@@ -70,8 +71,11 @@ public final class Player extends GameObject {
     }
 
     /*
-     * Applies simple platformer physics.
-     * The level owns collision detection, while Player owns its motion state.
+     * Applies one frame of simple physics integration.
+     *
+     * Responsibility split:
+     * - Player owns velocity and gravity response.
+     * - Level classes own collision resolution and world rules.
      */
     public void applyPhysics(double deltaSeconds, double gravity) {
         previousY = getY();
@@ -80,7 +84,7 @@ public final class Player extends GameObject {
     }
 
     /*
-     * Called by a level when collision says the player has landed on top of a block.
+     * Places the Player on top of a solid surface and clears downward velocity.
      */
     public void landOn(double platformY) {
         setPosition(getX(), platformY - getHeight());
@@ -89,8 +93,10 @@ public final class Player extends GameObject {
     }
 
     /*
-     * Resets the player to the original spawn point for that level.
-     * If your team later wants checkpoints, this method is a good place to extend.
+     * Resets the Player to the recorded spawn point for the current level.
+     *
+     * If checkpoint support is added later, this method is an appropriate extension
+     * point because it already centralizes respawn behavior.
      */
     public void resetToSpawn() {
         setPosition(spawnX, spawnY);

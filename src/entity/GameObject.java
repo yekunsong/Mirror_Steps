@@ -6,29 +6,27 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 /*
- * Parent class for basic drawable game objects.
+ * Shared base class for simple on-screen game objects.
  *
- * Parent-child relationship:
- * - GameObject is the parent class
- * - Player and Block are child classes
+ * Inheritance structure:
+ * - GameObject is the parent class.
+ * - Player and Block are concrete child classes.
  *
- * This inheritance exists only to share the repeated data that both child classes need:
- * - x/y position
- * - width/height
- * - one JavaFX Rectangle node
- * - helper methods for moving and syncing the node
+ * Purpose of this abstraction:
+ * - centralize position data
+ * - centralize width and height storage
+ * - centralize synchronization between logical coordinates and the JavaFX node
  *
- * Why this class is still useful:
- * - it avoids copy-pasting the same position/render code into Player and Block
- * - it keeps child classes focused on their own behavior
+ * Reason this class remains in the project:
+ * - Without it, Player and Block would duplicate the same rendering and coordinate
+ *   management code.
+ * - Keeping this single parent class is a reasonable compromise between simplicity
+ *   and code reuse.
  *
- * Future extension directions:
- * - add rotation support
- * - add visibility toggles
- * - add image-based rendering instead of plain rectangles
- *
- * If your team wants a new simple object later, such as a checkpoint or hazard,
- * it can extend GameObject in the same way as Block currently does.
+ * Extension guidance:
+ * - If a future version introduces checkpoints, hazards, decorations, or collectible
+ *   objects again, they can extend this class if they share the same rectangular
+ *   rendering model.
  */
 public abstract class GameObject {
 
@@ -53,7 +51,7 @@ public abstract class GameObject {
     }
 
     /*
-     * Returns the JavaFX node that levels add into their Pane.
+     * Returns the JavaFX node used for rendering inside a level pane.
      */
     public Node getNode() {
         return view;
@@ -98,7 +96,8 @@ public abstract class GameObject {
     }
 
     /*
-     * Keeps logical position and on-screen node position consistent.
+     * Synchronizes the logical coordinates stored in the object with the JavaFX
+     * rectangle used for rendering.
      */
     private void syncView() {
         view.setLayoutX(x);

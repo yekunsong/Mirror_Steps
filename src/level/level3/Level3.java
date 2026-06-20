@@ -25,19 +25,21 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 /*
- * Level 3 scene file.
+ * Concrete scene implementation for Level 3.
  *
- * This is the final level in the minimal framework.
- * Its goal returns the player to the menu instead of opening a separate completion page.
+ * Architectural role:
+ * - This class implements the final stage in the simplified three-level structure.
+ * - It follows the same pattern as Level1 and Level2 while changing the final
+ *   transition behavior to return to the menu.
  *
- * Relationship notes:
- * - Level3 is independent from the other levels
- * - it uses AppRouter to return to Menu or Previous Level
+ * Responsibilities:
+ * - define the Level 3 layout
+ * - maintain player interaction and collision logic
+ * - provide the final completion route back to the menu
  *
- * Future extension directions:
- * - replace Finish -> Menu with a dedicated Game Complete screen
- * - add more difficult platform layout
- * - add a special final-level mechanic
+ * Extension guidance:
+ * - A future revision can replace the return-to-menu behavior with a dedicated ending
+ *   scene if required.
  */
 public final class Level3 {
 
@@ -59,7 +61,7 @@ public final class Level3 {
     }
 
     /*
-     * Builds the full final level scene.
+     * Builds and returns the complete Level 3 scene.
      */
     public Scene createScene() {
         root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
@@ -110,7 +112,10 @@ public final class Level3 {
     }
 
     /*
-     * The final button is called Finish instead of Next because this level returns to Menu.
+     * Creates the pause menu used in the final level.
+     *
+     * The final action button is labelled "Finish" because completing Level 3 returns
+     * the application to the menu scene rather than opening another level.
      */
     private VBox createPauseMenu(String titleText, int previousLevel) {
         Label title = new Label(titleText);
@@ -206,7 +211,7 @@ public final class Level3 {
     }
 
     /*
-     * Automatic completion for the final level.
+     * Returns to the menu scene when the player reaches the final goal area.
      */
     private void checkGoal() {
         if (!changingLevel && player.getBounds().intersects(goal.getBoundsInParent())) {
