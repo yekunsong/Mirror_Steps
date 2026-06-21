@@ -10,6 +10,7 @@ The current framework keeps only the minimum features required for a level-based
 - one shared player object
 - one shared terrain block object
 - one goal area in each level
+- one shared base level class for repeated gameplay flow
 
 The framework does not currently include enemies, inventory, keys, doors, audio systems, save systems, or advanced game-state managers.
 
@@ -26,13 +27,14 @@ The `core` package contains application startup and scene routing.
 
 - `AppRouter.java`
   Controls navigation between `Menu`, `Settings`, `Level1`, `Level2`, and `Level3`.
+  It is the only class responsible for changing the top-level scene on the `Stage`.
 
 ### `config`
 
 The `config` package contains shared configuration values.
 
 - `GameConfig.java`
-  Stores fixed window size, world size, player constants, colors, and keyboard mappings.
+  Stores world size, player constants, colors, and keyboard mappings.
 
 This package should contain only values intended to affect the entire project.
 
@@ -53,19 +55,29 @@ The `entity` package contains reusable gameplay objects.
 
 The `level` package contains the playable stages.
 
+- `BaseLevel.java`
+  Shared parent class for all playable levels. It contains:
+  - scene creation
+  - player creation
+  - pause overlay creation
+  - input handling
+  - timer-based update loop
+  - collision resolution
+  - world-bound clamping
+  - goal detection
+  - routing requests back through `AppRouter`
+
 - `level.level1.Level1`
 - `level.level2.Level2`
 - `level.level3.Level3`
 
-Each level file is self-contained and includes:
+Each concrete level file should now contain only:
 
-- level layout
-- player creation
-- goal creation
-- collision logic
-- update loop
-- pause overlay
-- routing requests through `AppRouter`
+- level title
+- platform layout
+- goal position
+- previous/next level identifiers
+- any truly unique level-specific behavior
 
 ### `ui`
 
@@ -75,6 +87,7 @@ The `ui` package contains non-gameplay scenes.
 - `SettingsView.java`
 
 These files should contain interface construction only, not gameplay logic.
+They now receive `AppRouter` directly and call simple navigation methods on it.
 
 ## 3. Current Source Structure
 
@@ -94,6 +107,7 @@ src/
     Block.java
 
   level/
+    BaseLevel.java
     level1/Level1.java
     level2/Level2.java
     level3/Level3.java
@@ -107,12 +121,19 @@ src/
 
 The following rules should be followed when modifying the project.
 
-### Modify `level` files when:
+### Modify concrete `level` files when:
 
 - the terrain layout of one level changes
 - the goal position of one level changes
 - one level needs a unique mechanic
-- one level needs different text or presentation
+- one level needs different title text or level-specific navigation behavior
+
+### Modify `BaseLevel` when:
+
+- all levels need the same pause menu change
+- all levels need the same input handling change
+- all levels need the same collision or update-loop change
+- all levels need the same scene wrapper or overlay behavior
 
 ### Modify `entity` files when:
 
@@ -122,7 +143,6 @@ The following rules should be followed when modifying the project.
 
 ### Modify `config` when:
 
-- the fixed window size changes
 - the shared world size changes
 - keyboard controls change for the entire game
 - shared colors or global movement constants change
@@ -151,6 +171,7 @@ A five-person team can divide work as follows:
 
 Shared files that should be modified carefully and preferably after discussion:
 
+- `src/level/BaseLevel.java`
 - `src/core/Main.java`
 - `src/core/AppRouter.java`
 - `src/config/GameConfig.java`
@@ -160,14 +181,28 @@ Shared files that should be modified carefully and preferably after discussion:
 
 ## 6. Modification Rules
 
-When deciding where code should go, apply the following rule:
+When deciding where code should go, apply the following rules:
 
 - if a change affects one specific level only, keep it inside that level file
-- if a change affects every level, move it into `GameConfig`, `Player`, `Block`, or `AppRouter`, depending on the type of change
+- if a change affects every level, move it into `BaseLevel`, `GameConfig`, `Player`, `Block`, or `AppRouter`, depending on the type of change
+- do not reintroduce duplicated logic into `Level1`, `Level2`, and `Level3` if the same logic already belongs in `BaseLevel`
 
 Avoid reintroducing the old architecture layers unless there is a clear project requirement.
 
-## 7. Git Collaboration Workflow
+## 7. Current Navigation Model
+
+The routing model is intentionally simple:
+
+- `Main` creates `GameConfig`
+- `Main` creates `AppRouter`
+- `AppRouter` opens `MenuView`, `SettingsView`, or a level scene
+- `MenuView` and `SettingsView` receive `AppRouter` directly
+- each level receives `AppRouter` through its constructor
+- no callback chains are required for menu navigation
+
+This keeps the code easier to understand for a student team.
+
+## 8. Git Collaboration Workflow
 
 ### Recommended overall policy
 
@@ -176,14 +211,9 @@ The recommended process for this project is:
 1. modify code locally
 2. test locally
 3. create a local commit
-4. wait for review or approval from the repository owner or group leader
-5. push to GitHub only after approval
+4. push to GitHub
 
-This workflow is preferred because it:
-
-- preserves a clear history of individual changes
-- makes review easier
-- reduces the chance of directly pushing incorrect or incomplete work to the shared repository
+If multiple people are working at the same time, prefer a feature branch instead of pushing directly to `main`.
 
 ### Initial setup for a group member
 
@@ -193,16 +223,19 @@ Clone the repository:
 git clone https://github.com/yekunsong/Java_Code.git
 ```
 
-Enter the project directory:
+Enter the repository:
 
 ```powershell
 cd Java_Code
 ```
 
+If this game folder should live inside the repository, copy or move the project into the correct location before committing.
+
 Check the current branch and working status:
 
 ```powershell
 git status
+git branch
 ```
 
 ### Daily workflow before coding
@@ -213,7 +246,7 @@ Before beginning new work, always update the local copy:
 git pull origin main
 ```
 
-This is important because it reduces the risk of overwriting another contributor's work.
+This reduces the risk of overwriting another contributor's work.
 
 ### Local development workflow
 
@@ -222,33 +255,25 @@ After completing one logical unit of work:
 ```powershell
 git status
 git add .
-git commit -m "Update level 2 layout"
+git commit -m "Refactor game framework structure"
 ```
 
 Examples of acceptable commit messages:
 
-- `Update level 1 platform layout`
-- `Refine settings screen text`
-- `Adjust player movement constants`
-- `Fix pause overlay routing`
-
-### Push workflow after approval
-
-Once the change has been reviewed or approved:
-
-```powershell
-git push origin main
-```
+- `Refactor game framework structure`
+- `Add shared BaseLevel for level flow`
+- `Simplify AppRouter and menu navigation`
+- `Update framework guide for new architecture`
 
 ### Safer branch-based workflow
 
 If the team wants a safer process, use feature branches:
 
 ```powershell
-git checkout -b feature/level1-update
+git checkout -b feature/game-framework-refactor
 git add .
-git commit -m "Update level 1 jump layout"
-git push origin feature/level1-update
+git commit -m "Refactor game framework structure"
+git push origin feature/game-framework-refactor
 ```
 
 This workflow is recommended when multiple contributors are working at the same time because it avoids direct conflict on `main`.
@@ -261,22 +286,22 @@ This workflow is recommended when multiple contributors are working at the same 
 - do not skip `git pull` before starting new work
 - do not overwrite another contributor's work without discussion
 
-## 8. File Ownership Guidance for Git Work
+## 9. File Ownership Guidance for Git Work
 
 The following ownership mapping is recommended for day-to-day work:
 
 - Level 1 work should mainly affect `src/level/level1/Level1.java`
 - Level 2 work should mainly affect `src/level/level2/Level2.java`
 - Level 3 work should mainly affect `src/level/level3/Level3.java`
+- Shared level-flow work should mainly affect `src/level/BaseLevel.java`
 - Menu work should mainly affect `src/ui/MenuView.java`
 - Settings work should mainly affect `src/ui/SettingsView.java`
 
 Any change to shared files should be discussed first because it can affect every contributor.
 
-## 9. Future Expansion Suggestions
+## 10. Future Expansion Suggestions
 
 1. improve level visuals and layout
 2. improve the settings screen
 3. add additional reusable entities only when more than one level needs them
 4. add advanced systems such as audio or save data only after the base structure is stable
-.etc

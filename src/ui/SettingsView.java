@@ -1,6 +1,7 @@
 package ui;
 
 import config.GameConfig;
+import core.AppRouter;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -18,8 +19,8 @@ import javafx.scene.layout.VBox;
  *   extension point rather than a complete settings subsystem.
  *
  * Relationship note:
- * - AppRouter opens this scene and supplies the callback required to return to the
- *   menu scene.
+ * - AppRouter opens this scene and is passed into the view so the Back button can
+ *   return to the menu scene directly.
  *
  * Extension guidance:
  * - A future revision can add audio controls, accessibility settings, key-binding
@@ -31,11 +32,11 @@ public final class SettingsView {
      * Builds and returns the settings scene using the same fixed dimensions as all
      * other application scenes.
      */
-    public Scene createScene(GameConfig config, Runnable backToMenu) {
+    public Scene createScene(GameConfig config, AppRouter router) {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(0));
-        root.setMinSize(config.getStageWidth(), config.getStageHeight());
-        root.setPrefSize(config.getStageWidth(), config.getStageHeight());
+        root.setMinSize(config.getWorldWidth(), config.getWorldHeight());
+        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
         root.setStyle("-fx-background-color: white;");
 
         Label title = new Label("Settings");
@@ -57,7 +58,7 @@ public final class SettingsView {
         Button backButton = new Button("Back to Menu");
         backButton.getStyleClass().add("primary-button");
         backButton.setMaxWidth(Double.MAX_VALUE);
-        backButton.setOnAction(event -> backToMenu.run());
+        backButton.setOnAction(event -> router.showMenu());
 
         VBox card = new VBox(16, title, subtitle, controls, ownership, backButton);
         card.setAlignment(Pos.TOP_LEFT);
@@ -73,6 +74,6 @@ public final class SettingsView {
 
         root.setCenter(stageCenter);
 
-        return new Scene(root, config.getStageWidth(), config.getStageHeight());
+        return new Scene(root, config.getWorldWidth(), config.getWorldHeight());
     }
 }

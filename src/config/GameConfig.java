@@ -32,8 +32,6 @@ import javafx.scene.paint.Color;
 public final class GameConfig {
 
     private final String title;
-    private final double stageWidth;
-    private final double stageHeight;
     private final double worldWidth;
     private final double worldHeight;
     private final double playerWidth = 36;
@@ -53,24 +51,14 @@ public final class GameConfig {
      * monitor size. This decision keeps all scenes visually consistent and removes
      * the previous mismatch between menu screens and gameplay scenes.
      */
-    public GameConfig(double stageWidth, double stageHeight) {
+    public GameConfig(double width, double height) {
         this.title = "Mirror Steps";
-        this.stageWidth = stageWidth;
-        this.stageHeight = stageHeight;
-        this.worldWidth = stageWidth;
-        this.worldHeight = stageHeight;
+        this.worldWidth = width;
+        this.worldHeight = height;
     }
 
     public String getTitle() {
         return title;
-    }
-
-    public double getStageWidth() {
-        return stageWidth;
-    }
-
-    public double getStageHeight() {
-        return stageHeight;
     }
 
     public double getWorldWidth() {

@@ -56,7 +56,7 @@ public final class AppRouter {
      * The scene is always shown with the same fixed stage size as the other scenes.
      */
     public void showMenu() {
-        Scene scene = menuView.createScene(config, () -> showLevel(1), this::showSettings, stage::close);
+        Scene scene = menuView.createScene(config, this);
         applyScene(scene, config.getTitle());
     }
 
@@ -67,7 +67,7 @@ public final class AppRouter {
      * future-extension page rather than a full settings system.
      */
     public void showSettings() {
-        Scene scene = settingsView.createScene(config, this::showMenu);
+        Scene scene = settingsView.createScene(config, this);
         applyScene(scene, config.getTitle() + " - Settings");
     }
 
@@ -87,6 +87,10 @@ public final class AppRouter {
         applyScene(scene, config.getTitle() + " - Level " + levelId);
     }
 
+    public void closeApp() {
+        stage.close();
+    }
+
     private void applyScene(Scene scene, String title) {
         var stylesheetResource = getClass().getResource("/core/application.css");
         if (stylesheetResource != null) {
@@ -99,8 +103,8 @@ public final class AppRouter {
          * This ensures that menu screens, settings screens, and gameplay scenes are
          * displayed with the same visible dimensions.
          */
-        stage.setWidth(config.getStageWidth());
-        stage.setHeight(config.getStageHeight());
+        stage.setWidth(config.getWorldWidth());
+        stage.setHeight(config.getWorldHeight());
         stage.centerOnScreen();
         stage.setTitle(title);
         stage.setScene(scene);
