@@ -15,6 +15,10 @@ import level.level9.Level9;
 import level.level10.Level10;
 import level.level11.Level11;
 import level.level12.Level12;
+import level.level13.Level13;
+import level.level14.Level14;
+import level.level15.Level15;
+import level.level16.Level16;
 import ui.MenuView;
 import ui.SettingsView;
 
@@ -100,6 +104,10 @@ public final class AppRouter {
             case 10 -> new Level10(config, this).createScene();
             case 11 -> new Level11(config, this).createScene();
             case 12 -> new Level12(config, this).createScene();
+            case 13 -> new Level13(config, this).createScene();
+            case 14 -> new Level14(config, this).createScene();
+            case 15 -> new Level15(config, this).createScene();
+            case 16 -> new Level16(config, this).createScene();
             default -> new Level1(config, this).createScene();
         };
         applyScene(scene, config.getTitle() + " - Level " + levelId);
