@@ -204,18 +204,19 @@ This keeps the code easier to understand for a student team.
 
 ## 8. Git Collaboration Workflow
 
-### Recommended overall policy
+### Team policy
 
-The recommended process for this project is:
+Use one shared GitHub repository for the whole team.
 
-1. modify code locally
-2. test locally
-3. create a local commit
-4. push to GitHub
+- everyone works in the same repository
+- nobody writes code directly on `main`
+- each task should use one personal branch
+- finished work should be submitted through a Pull Request
+- the team leader reviews and merges into `main`
 
-If multiple people are working at the same time, prefer a feature branch instead of pushing directly to `main`.
+This project does not need `fork`, `upstream`, or other advanced Git concepts.
 
-### Initial setup for a group member
+### First-time setup for each member
 
 Clone the repository:
 
@@ -229,62 +230,58 @@ Enter the repository:
 cd Java_Code
 ```
 
-If this game folder should live inside the repository, copy or move the project into the correct location before committing.
+### Simple daily workflow
 
-Check the current branch and working status:
-
-```powershell
-git status
-git branch
-```
-
-### Daily workflow before coding
-
-Before beginning new work, always update the local copy:
+Before starting any task:
 
 ```powershell
 git pull origin main
+git checkout -b yourname-feature
 ```
 
-This reduces the risk of overwriting another contributor's work.
+Examples:
 
-### Local development workflow
+- `song-level1`
+- `ali-menu`
+- `mina-settings`
 
-After completing one logical unit of work:
+After finishing one task:
 
 ```powershell
-git status
 git add .
-git commit -m "Refactor game framework structure"
+git commit -m "Finish level 1 platform layout"
+git push origin yourname-feature
 ```
 
-Examples of acceptable commit messages:
+Then open GitHub and create a Pull Request to `main`.
 
-- `Refactor game framework structure`
-- `Add shared BaseLevel for level flow`
-- `Simplify AppRouter and menu navigation`
-- `Update framework guide for new architecture`
+### Rules every contributor should follow
 
-### Safer branch-based workflow
+- always run `git pull origin main` before starting work
+- never write code directly on `main`
+- use one branch for one task
+- if a Pull Request needs changes, keep editing the same branch and push again
+- if you want to change a shared file, discuss it first in the group chat
 
-If the team wants a safer process, use feature branches:
+### Shared files that need extra care
 
-```powershell
-git checkout -b feature/game-framework-refactor
-git add .
-git commit -m "Refactor game framework structure"
-git push origin feature/game-framework-refactor
-```
+These files affect multiple teammates and should be discussed before changing:
 
-This workflow is recommended when multiple contributors are working at the same time because it avoids direct conflict on `main`.
+- `src/level/BaseLevel.java`
+- `src/core/Main.java`
+- `src/core/AppRouter.java`
+- `src/config/GameConfig.java`
+- `src/entity/GameObject.java`
+- `src/entity/Player.java`
+- `src/entity/Block.java`
 
 ### What contributors should avoid
 
-- do not modify shared files casually
-- do not push unfinished work directly without notice
-- do not combine unrelated changes into one commit
-- do not skip `git pull` before starting new work
-- do not overwrite another contributor's work without discussion
+- do not create personal forks for this project
+- do not push directly to `main`
+- do not start coding without pulling the latest `main`
+- do not mix many unrelated changes into one branch
+- do not change shared files without notice
 
 ## 9. File Ownership Guidance for Git Work
 
