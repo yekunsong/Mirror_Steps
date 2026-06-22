@@ -34,6 +34,7 @@ public final class Main extends Application {
 
     public static void main(String[] args) {
         launch(args);
+        int a=1;
     }
 
     @Override
