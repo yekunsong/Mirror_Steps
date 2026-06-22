@@ -1,4 +1,4 @@
-package level.level4;
+package level.level7;
 
 import config.GameConfig;
 import core.AppRouter;
@@ -27,15 +27,15 @@ import level.BaseLevel;
  * - Edit this file when changing Level 1 only.
  * - Edit shared files only when the intended change affects all levels.
  */
-public final class Level4 extends BaseLevel {
+public final class Level7 extends BaseLevel {
 
-    public Level4(GameConfig config, AppRouter router) {
+    public Level7(GameConfig config, AppRouter router) {
         super(config, router);
     }
 
 	@Override
     protected String getLevelTitle() {
-        return "Level 4";
+        return "Level 7";
     }
 
     @Override
@@ -49,12 +49,12 @@ public final class Level4 extends BaseLevel {
 
     @Override
     protected int getPreviousLevelId() {
-        return 3;
+        return 6;
     }
 
     @Override
     protected int getNextLevelId() {
-        return 5;
+        return 8;
     }
     
 }
