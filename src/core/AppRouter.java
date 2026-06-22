@@ -6,6 +6,7 @@ import javafx.stage.Stage;
 import level.level1.Level1;
 import level.level2.Level2;
 import level.level3.Level3;
+import level.level4.Level4;
 import ui.MenuView;
 import ui.SettingsView;
 
@@ -82,6 +83,7 @@ public final class AppRouter {
             case 1 -> new Level1(config, this).createScene();
             case 2 -> new Level2(config, this).createScene();
             case 3 -> new Level3(config, this).createScene();
+            case 4 -> new Level4(config, this).createScene();
             default -> new Level1(config, this).createScene();
         };
         applyScene(scene, config.getTitle() + " - Level " + levelId);
