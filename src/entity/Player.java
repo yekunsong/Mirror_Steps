@@ -92,6 +92,16 @@ public final class Player extends GameObject {
         onGround = true;
     }
 
+    public void stopVerticalMovement() {
+        velocityY = 0;
+    }
+
+    public void hitCeiling(double blockBottomY) {
+        setPosition(getX(), blockBottomY + 0.1);
+        velocityY = 0;
+        onGround = false;
+    }
+
     /*
      * Resets the Player to the recorded spawn point for the current level.
      *
