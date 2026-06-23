@@ -1,4 +1,4 @@
-package level.level3;
+package level.level16;
 
 import config.GameConfig;
 import core.AppRouter;
@@ -21,15 +21,15 @@ import level.BaseLevel;
  * - A future revision can replace the return-to-menu behavior with a dedicated ending
  *   scene if required.
  */
-public final class Level3 extends BaseLevel {
+public final class Level16 extends BaseLevel {
 
-    public Level3(GameConfig config, AppRouter router) {
+    public Level16(GameConfig config, AppRouter router) {
         super(config, router);
     }
 
     @Override
     protected String getLevelTitle() {
-        return "Level 3";
+        return "Level 16";
     }
 
     @Override
@@ -44,12 +44,22 @@ public final class Level3 extends BaseLevel {
 
     @Override
     protected int getPreviousLevelId() {
-        return 2;
+        return 15;
     }
 
     @Override
     protected int getNextLevelId() {
-        return 4;
+        return -1;
     }
 
+    @Override
+    protected String getNextButtonText() {
+        return "Finish";
+    }
+
+    @Override
+    protected void onGoalReached() {
+        switchToMenu();
+    }
+    
 }
