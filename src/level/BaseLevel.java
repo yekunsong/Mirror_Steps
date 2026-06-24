@@ -4,6 +4,7 @@ import config.GameConfig;
 import core.AppRouter;
 import entity.Block;
 import entity.Player;
+import entity.SolidBlock;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,11 +31,13 @@ public abstract class BaseLevel {
     protected final AppRouter router;
     protected final Pane root = new Pane();
     protected final List<Block> blocks = new ArrayList<>();
+    protected final List<SolidBlock> solidBlocks = new ArrayList<>();
     protected final Set<KeyCode> activeKeys = new HashSet<>();
     protected Player player;
     protected Rectangle goal;
     protected VBox pauseMenu;
     protected StackPane overlay;
+    protected double solidPreviousX;
 
     private AnimationTimer timer;
     private boolean changingLevel;
@@ -84,6 +87,12 @@ public abstract class BaseLevel {
         root.getChildren().add(block.getNode());
     }
 
+    protected void addSolidBlock(double x, double y, double width, double height) {
+        SolidBlock block = new SolidBlock(x, y, width, height, config.getBlockColor());
+        solidBlocks.add(block);
+        root.getChildren().add(block.getNode());
+    }
+
     protected void setGoal(double x, double y) {
         goal = new Rectangle(36, 72, config.getGoalColor());
         goal.setLayoutX(x);
@@ -107,6 +116,86 @@ public abstract class BaseLevel {
         changingLevel = true;
         stop();
         router.showMenu();
+    }
+
+    protected void resolveSolidCollisions() {
+        player.setOnGround(false);
+
+        for (SolidBlock block : solidBlocks) {
+            if (!player.getBounds().intersects(block.getBounds())) {
+                continue;
+            }
+
+            double playerLeft = player.getX();
+            double playerRight = player.getX() + player.getWidth();
+            double playerTop = player.getY();
+            double playerBottom = player.getY() + player.getHeight();
+
+            double blockLeft = block.getX();
+            double blockRight = block.getX() + block.getWidth();
+            double blockTop = block.getY();
+            double blockBottom = block.getY() + block.getHeight();
+
+            double previousLeft = solidPreviousX;
+            double previousRight = solidPreviousX + player.getWidth();
+            double previousTop = player.getPreviousY();
+            double previousBottom = player.getPreviousY() + player.getHeight();
+
+            if (player.getVelocityY() >= 0 && previousBottom <= blockTop + 16) {
+                player.landOn(blockTop);
+                continue;
+            }
+
+            if (player.getVelocityY() < 0 && previousTop >= blockBottom - 16) {
+                player.hitCeiling(blockBottom);
+                continue;
+            }
+
+            if (previousRight <= blockLeft) {
+                player.setPosition(blockLeft - player.getWidth(), player.getY());
+                continue;
+            }
+
+            if (previousLeft >= blockRight) {
+                player.setPosition(blockRight, player.getY());
+                continue;
+            }
+
+            double overlapLeft = playerRight - blockLeft;
+            double overlapRight = blockRight - playerLeft;
+            double overlapTop = playerBottom - blockTop;
+            double overlapBottom = blockBottom - playerTop;
+            double smallest = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
+
+            if (smallest == overlapTop) {
+                player.landOn(blockTop);
+            } else if (smallest == overlapBottom) {
+                player.hitCeiling(blockBottom);
+            } else if (smallest == overlapLeft) {
+                player.setPosition(blockLeft - player.getWidth(), player.getY());
+            } else {
+                player.setPosition(blockRight, player.getY());
+            }
+        }
+    }
+
+    protected void clampSolidPlayer() {
+        if (player.getX() < 0) {
+            player.setPosition(0, player.getY());
+        }
+
+        if (player.getX() > config.getWorldWidth() - player.getWidth()) {
+            player.setPosition(config.getWorldWidth() - player.getWidth(), player.getY());
+        }
+
+        if (player.getY() > config.getWorldHeight() + 100) {
+            onSolidPlayerOutOfWorld();
+        }
+    }
+
+    protected void onSolidPlayerOutOfWorld() {
+        player.resetToSpawn();
+        solidPreviousX = player.getX();
     }
 
     private void createPlayer() {
