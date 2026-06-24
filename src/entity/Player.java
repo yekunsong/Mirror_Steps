@@ -2,8 +2,11 @@ package entity;
 
 import config.GameConfig;
 import java.util.Set;
+
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 
 /*
  * Playable character object shared by all levels.
@@ -44,6 +47,20 @@ public final class Player extends GameObject {
         this.spawnX = x;
         this.spawnY = y;
         this.previousY = y;
+        
+        // Uncommited if you want to set player image
+        // initVisuals();
+    }
+    
+    private void initVisuals() {
+    	// change to your own downloaded position(only accept "jpg" or "jfif"
+        String localPath = "file:///C:/Users/Yang Dun Li/Downloads/WH7TB_SQ3_0000000017_RED_SLd.jfif"; 
+        
+        Image image = new Image(localPath);
+        
+        ImagePattern imagePattern = new ImagePattern(image);
+        this.getView().setFill(imagePattern);
+
     }
 
     /*
@@ -56,8 +73,13 @@ public final class Player extends GameObject {
         boolean left = activeKeys.stream().anyMatch(controls::isMoveLeft);
         boolean right = activeKeys.stream().anyMatch(controls::isMoveRight);
         boolean jump = activeKeys.stream().anyMatch(controls::isJump);
+        boolean run = activeKeys.stream().anyMatch(controls::isRunning);
+        
 
         velocityX = 0;
+        if (run == true) {
+        	moveSpeed = 250;
+        }
         if (left && !right) {
             velocityX = -moveSpeed;
         } else if (right && !left) {
