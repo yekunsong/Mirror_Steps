@@ -36,9 +36,9 @@ public final class GameConfig {
     private final double worldHeight;
     private final double playerWidth = 36;
     private final double playerHeight = 48;
-    private final double moveSpeed = 220;
-    private final double jumpVelocity = -360;
-    private final double gravity = 720;
+    private final double moveSpeed = 150;
+    private final double jumpVelocity = -600;
+    private final double gravity = 1000;
     private final Color blockColor = Color.web("#64748b");
     private final Color playerColor = Color.web("#22c55e");
     private final Color goalColor = Color.web("#f59e0b");
@@ -139,6 +139,10 @@ public final class GameConfig {
 
         public boolean isBack(KeyCode keyCode) {
             return keyCode == KeyCode.ESCAPE;
+        }
+        
+        public boolean isRunning(KeyCode keyCode) {
+        	return keyCode == KeyCode.SHIFT;
         }
     }
 }

@@ -295,7 +295,7 @@ public final class Level13 extends BaseLevel {
     }
 
     private void handleShift() {
-        boolean shiftPressed = activeKeys.contains(KeyCode.SHIFT);
+        boolean shiftPressed = activeKeys.contains(KeyCode.R);
         if (shiftPressed && !shiftLocked) {
             if (darkWorld) {
                 darkWorld = false;
