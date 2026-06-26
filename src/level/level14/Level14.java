@@ -2,15 +2,19 @@ package level.level14;
 
 import config.GameConfig;
 import core.AppRouter;
+import entity.MovePlatform;
 import entity.SolidBlock;
+import entity.Trap;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
-import javafx.scene.paint.CycleMethod;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
@@ -18,22 +22,23 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.RadialGradient;
 import javafx.scene.paint.Stop;
 import javafx.scene.shape.Rectangle;
 import level.BaseLevel;
 
 /*
- * Level 13 is a teaching stage for the Light World / Dark World mechanic.
+ * Level 14 expands the world-switch mechanic into a larger three-key dungeon.
  */
 public final class Level14 extends BaseLevel {
 
     private static final double MOVE_SPEED = 300;
-    private static final double JUMP_SPEED = -600;
+    private static final double JUMP_SPEED = -500;
     private static final double GRAVITY = 900;
 
     private static final double ENERGY_MAX = 100;
-    private static final double ENERGY_START = 50;
+    private static final double ENERGY_START = 30;
     private static final double ENERGY_DANGER = 92;
     private static final double LIGHT_CHARGE = 17;
     private static final double DARK_DRAIN = 15;
@@ -44,16 +49,28 @@ public final class Level14 extends BaseLevel {
     private static final double MAX_LIGHT_RADIUS = 130;
     private static final double LIGHT_CORE_RATIO = 0.2;
     private static final double LIGHT_MID_RATIO = 0.58;
+
+    private static final int TOTAL_KEYS = 3;
     private static final double DOOR_WIDTH = 52;
     private static final double DOOR_HEIGHT = 86;
     private static final double KEY_SIZE = 20;
 
+    private static final double SPAWN_X = 60;
+    private static final double SPAWN_Y = 592;
+
+    private static final Color PLATFORM_COLOR = Color.web("#38bdf8");
+    private static final Color TRAP_COLOR = Color.web("#ef4444");
+
     private final Rectangle energyTrack = new Rectangle();
     private final Rectangle energyBar = new Rectangle();
     private final Rectangle door = new Rectangle(DOOR_WIDTH, DOOR_HEIGHT);
-    private final Rectangle key = new Rectangle(KEY_SIZE, KEY_SIZE);
-    private final Label keyLabel = new Label("KEY");
+    private final Label doorLabel = new Label("DOOR");
+    private final Label doorStatusLabel = new Label();
     private final Pane darkLayer = new Pane();
+    private final List<Rectangle> keyNodes = new ArrayList<>();
+    private final List<Label> keyLabels = new ArrayList<>();
+    private final List<AttachedNode> attachedNodes = new ArrayList<>();
+    private final boolean[] collectedKeys = new boolean[TOTAL_KEYS];
 
     private AnimationTimer timer;
     private VBox levelPauseMenu;
@@ -61,10 +78,31 @@ public final class Level14 extends BaseLevel {
     private boolean paused;
     private boolean finished;
     private boolean darkWorld;
-    private boolean hasKey;
     private boolean worldSwitchLocked;
     private double energy;
     private long lastFrame = -1;
+    private MovePlatform centerDoorPlatform;
+    private MovePlatform rightPitPlatform;
+    private MovePlatform centerPitPlatform;
+
+    private static final class AttachedNode {
+        private final MovePlatform anchor;
+        private final Node node;
+        private final double offsetX;
+        private final double offsetY;
+
+        private AttachedNode(MovePlatform anchor, Node node, double offsetX, double offsetY) {
+            this.anchor = anchor;
+            this.node = node;
+            this.offsetX = offsetX;
+            this.offsetY = offsetY;
+        }
+
+        private void sync() {
+            node.setLayoutX(anchor.getX() + offsetX);
+            node.setLayoutY(anchor.getY() + offsetY);
+        }
+    }
 
     public Level14(GameConfig config, AppRouter router) {
         super(config, router);
@@ -74,16 +112,27 @@ public final class Level14 extends BaseLevel {
     public Scene createScene() {
         root.getChildren().clear();
         blocks.clear();
+        movePlatforms.clear();
         solidBlocks.clear();
+        traps.clear();
         activeKeys.clear();
-
+        keyNodes.clear();
+        keyLabels.clear();
+        attachedNodes.clear();
         paused = false;
         finished = false;
         darkWorld = false;
-        hasKey = false;
         worldSwitchLocked = false;
         energy = ENERGY_START;
         lastFrame = -1;
+        activeMovePlatform = null;
+        centerDoorPlatform = null;
+        rightPitPlatform = null;
+        centerPitPlatform = null;
+
+        for (int index = 0; index < TOTAL_KEYS; index++) {
+            collectedKeys[index] = false;
+        }
 
         root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
         root.setBackground(new Background(new BackgroundFill(Color.web("#f8fafc"), CornerRadii.EMPTY, Insets.EMPTY)));
@@ -93,6 +142,7 @@ public final class Level14 extends BaseLevel {
         buildObjects();
         buildEnergyBar();
         buildPauseLayer();
+        checkKeys();
         updateView();
 
         StackPane container = new StackPane(root, darkLayer, pauseLayer);
@@ -111,21 +161,52 @@ public final class Level14 extends BaseLevel {
 
     @Override
     protected void buildLevel() {
-        double blockW = config.getWorldWidth() / 5;
-        double blockH = config.getWorldHeight() / 5;
+        // Base floor and safe landing segments.
+        addSolidBlock(0, 660, 240, 60);
+        addSolidBlock(560, 660, 300, 60);
+        
+        // Left-side climb and room shell.
+        addSolidBlock(0, 240, 80, 24);
+        addSolidBlock(0, 264, 360, 24);
+        addSolidBlock(0, 480, 120, 24);
+        addSolidBlock(100, 456, 120, 24);
+        addSolidBlock(200, 432, 120, 24);
+        addSolidBlock(0, 0, 320, 24);
+        addSolidBlock(300, 0, 20, 148);
+        addSolidBlock(120, 124, 180, 24);
 
-        addSolidBlock(0, config.getWorldHeight() - blockH, blockW * 5, blockH);
-        addSolidBlock(blockW, config.getWorldHeight() - blockH * 2, blockW * 4, blockH);
-        addSolidBlock(blockW * 2, config.getWorldHeight() - blockH * 3, blockW * 3, blockH);
+        // Central and right-side fixed structures.
+        addSolidBlock(880, 0, 400, 24);
+        addSolidBlock(560, 480, 200, 24);
+        addSolidBlock(1020, 288, 440, 24);
+        addSolidBlock(1020, 160, 80, 128);
+        addSolidBlock(1100, 200, 60, 24);
+        addSolidBlock(860, 580, 60, 120);
+        addSolidBlock(1160, 600, 120, 24);
+        addSolidBlock(900, 432, 80, 24);
+        
+        // Move platforms are placed after all static collision surfaces.
+        centerDoorPlatform = addLevelMovePlatform(480, 120, 180, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 480, 600, 68);
+        centerPitPlatform = addLevelMovePlatform(420, 300, 140, 24, PLATFORM_COLOR, MovePlatform.Direction.VERTICAL, 300, 372, 80);
+        
+        addLevelMovePlatform(800, 180, 120, 24, PLATFORM_COLOR, MovePlatform.Direction.VERTICAL, 180, 252, 80);
+        rightPitPlatform = addLevelMovePlatform(1038, 520, 102, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 1038, 1118, 68);
+        addLevelMovePlatform(240, 576, 160, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 240, 360, 80);
 
-//        addSolidBlock(0, blockH * 2, blockW * 0.5, blockH);
-//        addSolidBlock(0, blockH, blockW * 1.5, blockH);
-//        addSolidBlock(0, 0, blockW * 5, blockH);
+        // Trap strips translated from the concept art.
+        addTrap(80, 264, 126, 24, TRAP_COLOR);
+        addTrap(100, 456, 100, 24, TRAP_COLOR);
+        addTrap(240, 660, 320, 60, TRAP_COLOR);
+        addTrap(744, 690, 186, 24, TRAP_COLOR);
+        addTrap(560, 504, 200, 24, TRAP_COLOR);
+        addTrap(1020, 136, 80, 24, TRAP_COLOR);
+        addAttachedTrap(rightPitPlatform, 0, 0, 102, 24, TRAP_COLOR);
+//        addTrap(960, 660, 344, 60, TRAP_COLOR);
 
-        setGoal(config.getWorldWidth() - 115, 154);
+        setGoal(660, 92);
         goal.setVisible(false);
     }
-
+    
     @Override
     protected int getPreviousLevelId() {
         return 13;
@@ -148,30 +229,85 @@ public final class Level14 extends BaseLevel {
     }
 
     private void createLevelPlayer() {
-        player = new entity.Player(60, 420, config.getPlayerWidth(), config.getPlayerHeight(), config.getPlayerColor());
+        player = new entity.Player(SPAWN_X, SPAWN_Y, config.getPlayerWidth(), config.getPlayerHeight(), config.getPlayerColor());
         root.getChildren().add(player.getNode());
         solidPreviousX = player.getX();
+    }
+
+    private MovePlatform addLevelMovePlatform(
+            double x,
+            double y,
+            double width,
+            double height,
+            Color color,
+            MovePlatform.Direction direction,
+            double minBound,
+            double maxBound,
+            double speed) {
+        MovePlatform platform = new MovePlatform(x, y, width, height, color, direction, minBound, maxBound, speed);
+        movePlatforms.add(platform);
+        root.getChildren().add(platform.getNode());
+        return platform;
+    }
+
+    private void addAttachedTrap(
+            MovePlatform anchor,
+            double offsetX,
+            double offsetY,
+            double width,
+            double height,
+            Color color) {
+        Trap trap = new Trap(anchor.getX() + offsetX, anchor.getY() + offsetY, width, height, color);
+        traps.add(trap);
+        root.getChildren().add(trap.getNode());
+        attachedNodes.add(new AttachedNode(anchor, trap.getNode(), offsetX, offsetY));
     }
 
     private void buildObjects() {
         door.setArcWidth(14);
         door.setArcHeight(14);
-        door.setLayoutX(config.getWorldWidth() - 165);
-        door.setLayoutY(154);
         door.setStrokeWidth(3);
+        root.getChildren().addAll(door, doorLabel, doorStatusLabel);
 
-        key.setArcWidth(10);
-        key.setArcHeight(10);
-        key.setLayoutX(505);
-        key.setLayoutY(241);
+        attachNode(centerDoorPlatform, door, (centerDoorPlatform.getWidth() - DOOR_WIDTH) * 0.5, -DOOR_HEIGHT);
 
-        keyLabel.setLayoutX(key.getLayoutX() - 8);
-        keyLabel.setLayoutY(key.getLayoutY() - 22);
-        keyLabel.setTextFill(Color.web("#fde68a"));
-        keyLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
-        keyLabel.setMouseTransparent(true);
+        styleFloatingLabel(doorLabel, Color.web("#fde68a"));
+        styleFloatingLabel(doorStatusLabel, Color.web("#e2e8f0"));
+        attachNode(centerDoorPlatform, doorLabel, (centerDoorPlatform.getWidth() - DOOR_WIDTH) * 0.5 - 4, -DOOR_HEIGHT - 36);
+        attachNode(centerDoorPlatform, doorStatusLabel, (centerDoorPlatform.getWidth() - 102) * 0.5, -DOOR_HEIGHT - 22);
 
-        root.getChildren().addAll(door, key, keyLabel);
+        addKeyObject(252, 64, "KEY 1");
+        addKeyObject(1192, 246, "KEY 2");
+        addKeyObject(1200, 536, "KEY 3");
+    }
+
+    private void attachNode(MovePlatform anchor, Node node, double offsetX, double offsetY) {
+        AttachedNode attachedNode = new AttachedNode(anchor, node, offsetX, offsetY);
+        attachedNodes.add(attachedNode);
+        attachedNode.sync();
+    }
+    
+    private void addKeyObject(double x, double y, String labelText) {
+        Rectangle keyNode = new Rectangle(KEY_SIZE, KEY_SIZE);
+        keyNode.setArcWidth(10);
+        keyNode.setArcHeight(10);
+        keyNode.setLayoutX(x);
+        keyNode.setLayoutY(y);
+
+        Label label = new Label(labelText);
+        styleFloatingLabel(label, Color.web("#fde68a"));
+        label.setLayoutX(x - 6);
+        label.setLayoutY(y - 22);
+
+        keyNodes.add(keyNode);
+        keyLabels.add(label);
+        root.getChildren().addAll(keyNode, label);
+    }
+
+    private void styleFloatingLabel(Label label, Color textColor) {
+        label.setTextFill(textColor);
+        label.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+        label.setMouseTransparent(true);
     }
 
     private void buildEnergyBar() {
@@ -222,7 +358,7 @@ public final class Level14 extends BaseLevel {
             stopLoop();
             onGoalReached();
         });
-
+        
         levelPauseMenu = new VBox(14, title, resumeButton, menuButton, previousButton, nextButton);
         levelPauseMenu.setAlignment(Pos.CENTER);
         levelPauseMenu.setPadding(new Insets(28));
@@ -275,7 +411,7 @@ public final class Level14 extends BaseLevel {
         };
         timer.start();
     }
-
+    
     private void stopLoop() {
         if (timer != null) {
             timer.stop();
@@ -288,13 +424,27 @@ public final class Level14 extends BaseLevel {
         }
 
         handleWorldSwitch();
+        updateMovePlatforms(deltaSeconds);
+
+        if (activeMovePlatform != null) {
+            player.moveBy(activeMovePlatform.getDeltaX(), activeMovePlatform.getDeltaY());
+        }
+
         solidPreviousX = player.getX();
         player.handleInput(activeKeys, config.getControlConfig(), MOVE_SPEED, JUMP_SPEED);
         player.applyPhysics(deltaSeconds, GRAVITY);
-        resolveSolidCollisions();
+        resolveLevelCollisions();
         clampSolidPlayer();
-        updateEnergy(deltaSeconds);
-        checkKey();
+
+        if (checkTrapCollision()) {
+            return;
+        }
+
+        if (updateEnergy(deltaSeconds)) {
+            return;
+        }
+
+        checkKeys();
         updateView();
         checkDoor();
     }
@@ -311,7 +461,101 @@ public final class Level14 extends BaseLevel {
         }
     }
 
-    private void updateEnergy(double deltaSeconds) {
+    private void updateMovePlatforms(double deltaSeconds) {
+        for (MovePlatform platform : movePlatforms) {
+            platform.update(deltaSeconds);
+        }
+        syncAttachedNodes();
+    }
+
+    private void syncAttachedNodes() {
+        for (AttachedNode attachedNode : attachedNodes) {
+            attachedNode.sync();
+        }
+    }
+    
+    private void resolveLevelCollisions() {
+        player.setOnGround(false);
+        activeMovePlatform = null;
+
+        resolveSolidCollisions();
+
+        for (MovePlatform platform : movePlatforms) {
+            if (!player.getBounds().intersects(platform.getBounds())) {
+                continue;
+            }
+
+            double playerLeft = player.getX();
+            double playerRight = player.getX() + player.getWidth();
+            double playerTop = player.getY();
+            double playerBottom = player.getY() + player.getHeight();
+
+            double blockLeft = platform.getX();
+            double blockRight = platform.getX() + platform.getWidth();
+            double blockTop = platform.getY();
+            double blockBottom = platform.getY() + platform.getHeight();
+
+            double previousLeft = playerLeft;
+            double previousRight = playerRight;
+            if (platform.getDirection() == MovePlatform.Direction.HORIZONTAL) {
+                previousLeft -= platform.getDeltaX();
+                previousRight -= platform.getDeltaX();
+            }
+
+            double previousTop = player.getPreviousY();
+            double previousBottom = player.getPreviousY() + player.getHeight();
+
+            if (player.getVelocityY() >= 0 && previousBottom <= blockTop + 16) {
+                player.landOn(blockTop);
+                activeMovePlatform = platform;
+                continue;
+            }
+
+            if (player.getVelocityY() < 0 && previousTop >= blockBottom - 16) {
+                player.hitCeiling(blockBottom);
+                continue;
+            }
+
+            if (previousRight <= blockLeft) {
+                player.setPosition(blockLeft - player.getWidth(), player.getY());
+                continue;
+            }
+
+            if (previousLeft >= blockRight) {
+                player.setPosition(blockRight, player.getY());
+                continue;
+            }
+
+            double overlapLeft = playerRight - blockLeft;
+            double overlapRight = blockRight - playerLeft;
+            double overlapTop = playerBottom - blockTop;
+            double overlapBottom = blockBottom - playerTop;
+            double smallest = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
+
+            if (smallest == overlapTop) {
+                player.landOn(blockTop);
+                activeMovePlatform = platform;
+            } else if (smallest == overlapBottom) {
+                player.hitCeiling(blockBottom);
+            } else if (smallest == overlapLeft) {
+                player.setPosition(blockLeft - player.getWidth(), player.getY());
+            } else {
+                player.setPosition(blockRight, player.getY());
+            }
+        }
+    }
+
+    private boolean checkTrapCollision() {
+        for (Trap trap : traps) {
+            if (player.getBounds().intersects(trap.getBounds())) {
+                resetPlayer(false);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean updateEnergy(double deltaSeconds) {
         if (darkWorld) {
             energy -= DARK_DRAIN * deltaSeconds;
             if (energy <= 0) {
@@ -322,7 +566,7 @@ public final class Level14 extends BaseLevel {
             energy += LIGHT_CHARGE * deltaSeconds;
             if (energy >= ENERGY_DANGER) {
                 resetPlayer(true);
-                return;
+                return true;
             }
         }
 
@@ -332,18 +576,25 @@ public final class Level14 extends BaseLevel {
         if (energy > ENERGY_MAX) {
             energy = ENERGY_MAX;
         }
+        return false;
     }
+    
+    private void checkKeys() {
+        for (int index = 0; index < TOTAL_KEYS; index++) {
+            Rectangle keyNode = keyNodes.get(index);
+            Label label = keyLabels.get(index);
+            boolean keyVisible = darkWorld && !collectedKeys[index];
+            keyNode.setVisible(keyVisible);
+            label.setVisible(keyVisible);
 
-    private void checkKey() {
-        boolean keyVisible = darkWorld && !hasKey;
-        key.setVisible(keyVisible);
-        keyLabel.setVisible(keyVisible);
-
-        if (!hasKey && darkWorld && player.getBounds().intersects(key.getBoundsInParent())) {
-            hasKey = true;
-            key.setVisible(false);
-            keyLabel.setVisible(false);
+            if (!collectedKeys[index] && darkWorld && player.getBounds().intersects(keyNode.getBoundsInParent())) {
+                collectedKeys[index] = true;
+                keyNode.setVisible(false);
+                label.setVisible(false);
+            }
         }
+
+        doorStatusLabel.setText(getCollectedKeyCount() + " / " + TOTAL_KEYS + " KEYS");
     }
 
     private void updateView() {
@@ -359,15 +610,28 @@ public final class Level14 extends BaseLevel {
         darkLayer.setVisible(darkWorld);
 
         for (SolidBlock block : solidBlocks) {
-            block.getNode().setOpacity(darkWorld ? 0.9 : 1.0);
+            block.getNode().setOpacity(darkWorld ? 0.88 : 1.0);
+        }
+        for (MovePlatform platform : movePlatforms) {
+            platform.getNode().setOpacity(darkWorld ? 0.95 : 1.0);
+        }
+        for (Trap trap : traps) {
+            trap.getNode().setOpacity(darkWorld ? 0.9 : 1.0);
         }
 
-        door.setFill(hasKey ? Color.web("#84cc16") : Color.web("#7c3aed"));
-        door.setStroke(darkWorld ? Color.web("#c4b5fd") : Color.web("#ede9fe"));
-        door.setOpacity(darkWorld ? 0.28 : 1.0);
+        int keyCount = getCollectedKeyCount();
+        boolean doorUnlocked = keyCount == TOTAL_KEYS;
 
-        key.setFill(Color.web("#facc15"));
-        key.setStroke(Color.web("#fef08a"));
+        door.setFill(doorUnlocked ? Color.web("#84cc16") : Color.web("#7c3aed"));
+        door.setStroke(darkWorld ? Color.web("#c4b5fd") : Color.web("#ede9fe"));
+        door.setOpacity(darkWorld ? 0.35 : 1.0);
+
+        doorStatusLabel.setTextFill(doorUnlocked ? Color.web("#bef264") : Color.web("#e2e8f0"));
+
+        for (Rectangle keyNode : keyNodes) {
+            keyNode.setFill(Color.web("#facc15"));
+            keyNode.setStroke(Color.web("#fef08a"));
+        }
 
         double energyHeight = 50 * (energy / ENERGY_MAX);
         double barX = player.getX() + player.getWidth() + 8;
@@ -381,7 +645,7 @@ public final class Level14 extends BaseLevel {
     }
 
     private void checkDoor() {
-        if (darkWorld || !hasKey) {
+        if (darkWorld || getCollectedKeyCount() < TOTAL_KEYS) {
             return;
         }
 
@@ -391,18 +655,31 @@ public final class Level14 extends BaseLevel {
         }
     }
 
-    private void resetPlayer(boolean loseKey) {
+    private int getCollectedKeyCount() {
+        int count = 0;
+        for (boolean collectedKey : collectedKeys) {
+            if (collectedKey) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    private void resetPlayer(boolean loseKeys) {
         player.resetToSpawn();
         solidPreviousX = player.getX();
         darkWorld = false;
         worldSwitchLocked = false;
+        activeMovePlatform = null;
         energy = ENERGY_START;
 
-        if (loseKey) {
-            hasKey = false;
+        if (loseKeys) {
+            for (int index = 0; index < TOTAL_KEYS; index++) {
+                collectedKeys[index] = false;
+            }
         }
 
-        checkKey();
+        checkKeys();
         updateView();
     }
 
