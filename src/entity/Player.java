@@ -1,6 +1,7 @@
 package entity;
 
 import config.GameConfig;
+import java.io.File;
 import java.util.Set;
 
 import javafx.scene.image.Image;
@@ -54,7 +55,7 @@ public final class Player extends GameObject {
     
     private void initVisuals() {
     	// change to your own downloaded position(only accept "jpg" or "jfif"
-        String localPath = "file:///C:/Users/Yang Dun Li/Downloads/WH7TB_SQ3_0000000017_RED_SLd.jfif"; 
+        String localPath = new File("D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Player.jpg").toURI().toString();
         
         Image image = new Image(localPath);
         
@@ -119,7 +120,7 @@ public final class Player extends GameObject {
     }
 
     public void hitCeiling(double blockBottomY) {
-        setPosition(getX(), blockBottomY + 0.1);
+        setPosition(getX(), blockBottomY + 0.0001);
         velocityY = 0;
         onGround = false;
     }
