@@ -10,6 +10,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
+import javafx.scene.paint.CycleMethod;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
@@ -17,19 +18,18 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
 import level.BaseLevel;
 
 /*
- * Level 14 uses the same Light World / Dark World mechanic as Level 13,
- * but the map is harder.
+ * Level 13 is a teaching stage for the Light World / Dark World mechanic.
  */
 public final class Level14 extends BaseLevel {
 
     private static final double MOVE_SPEED = 300;
-    private static final double JUMP_SPEED = -440;
+    private static final double JUMP_SPEED = -600;
     private static final double GRAVITY = 900;
 
     private static final double ENERGY_MAX = 100;
@@ -39,7 +39,11 @@ public final class Level14 extends BaseLevel {
     private static final double DARK_DRAIN = 15;
     private static final double MIN_DARK_ENERGY = 8;
 
-    private static final double LIGHT_RADIUS = 130;
+    private static final KeyCode WORLD_SWITCH_KEY = KeyCode.Q;
+    private static final double MIN_LIGHT_RADIUS = 75;
+    private static final double MAX_LIGHT_RADIUS = 130;
+    private static final double LIGHT_CORE_RATIO = 0.2;
+    private static final double LIGHT_MID_RATIO = 0.58;
     private static final double DOOR_WIDTH = 52;
     private static final double DOOR_HEIGHT = 86;
     private static final double KEY_SIZE = 20;
@@ -58,7 +62,7 @@ public final class Level14 extends BaseLevel {
     private boolean finished;
     private boolean darkWorld;
     private boolean hasKey;
-    private boolean shiftLocked;
+    private boolean worldSwitchLocked;
     private double energy;
     private long lastFrame = -1;
 
@@ -77,7 +81,7 @@ public final class Level14 extends BaseLevel {
         finished = false;
         darkWorld = false;
         hasKey = false;
-        shiftLocked = false;
+        worldSwitchLocked = false;
         energy = ENERGY_START;
         lastFrame = -1;
 
@@ -107,19 +111,18 @@ public final class Level14 extends BaseLevel {
 
     @Override
     protected void buildLevel() {
-        addSolidBlock(0, config.getWorldHeight() - 40, 180, 40);
-        addSolidBlock(250, config.getWorldHeight() - 40, 120, 40);
-        addSolidBlock(430, config.getWorldHeight() - 40, 110, 40);
-        addSolidBlock(610, config.getWorldHeight() - 40, 130, 40);
-        addSolidBlock(810, config.getWorldHeight() - 40, config.getWorldWidth() - 810, 40);
+        double blockW = config.getWorldWidth() / 5;
+        double blockH = config.getWorldHeight() / 5;
 
-        addSolidBlock(150, 370, 90, 24);
-        addSolidBlock(310, 310, 90, 24);
-        addSolidBlock(470, 250, 90, 24);
-        addSolidBlock(630, 190, 100, 24);
-        addSolidBlock(800, 280, 100, 24);
+        addSolidBlock(0, config.getWorldHeight() - blockH, blockW * 5, blockH);
+        addSolidBlock(blockW, config.getWorldHeight() - blockH * 2, blockW * 4, blockH);
+        addSolidBlock(blockW * 2, config.getWorldHeight() - blockH * 3, blockW * 3, blockH);
 
-        setGoal(config.getWorldWidth() - 100, 150);
+//        addSolidBlock(0, blockH * 2, blockW * 0.5, blockH);
+//        addSolidBlock(0, blockH, blockW * 1.5, blockH);
+//        addSolidBlock(0, 0, blockW * 5, blockH);
+
+        setGoal(config.getWorldWidth() - 115, 154);
         goal.setVisible(false);
     }
 
@@ -153,14 +156,14 @@ public final class Level14 extends BaseLevel {
     private void buildObjects() {
         door.setArcWidth(14);
         door.setArcHeight(14);
-        door.setLayoutX(config.getWorldWidth() - 88);
-        door.setLayoutY(108);
+        door.setLayoutX(config.getWorldWidth() - 165);
+        door.setLayoutY(154);
         door.setStrokeWidth(3);
 
         key.setArcWidth(10);
         key.setArcHeight(10);
-        key.setLayoutX(670);
-        key.setLayoutY(156);
+        key.setLayoutX(505);
+        key.setLayoutY(241);
 
         keyLabel.setLayoutX(key.getLayoutX() - 8);
         keyLabel.setLayoutY(key.getLayoutY() - 22);
@@ -250,8 +253,8 @@ public final class Level14 extends BaseLevel {
 
         scene.setOnKeyReleased(event -> {
             activeKeys.remove(event.getCode());
-            if (event.getCode() == KeyCode.SHIFT) {
-                shiftLocked = false;
+            if (event.getCode() == WORLD_SWITCH_KEY) {
+                worldSwitchLocked = false;
             }
         });
     }
@@ -284,7 +287,7 @@ public final class Level14 extends BaseLevel {
             return;
         }
 
-        handleShift();
+        handleWorldSwitch();
         solidPreviousX = player.getX();
         player.handleInput(activeKeys, config.getControlConfig(), MOVE_SPEED, JUMP_SPEED);
         player.applyPhysics(deltaSeconds, GRAVITY);
@@ -296,15 +299,15 @@ public final class Level14 extends BaseLevel {
         checkDoor();
     }
 
-    private void handleShift() {
-        boolean shiftPressed = activeKeys.contains(KeyCode.SHIFT);
-        if (shiftPressed && !shiftLocked) {
+    private void handleWorldSwitch() {
+        boolean switchPressed = activeKeys.contains(WORLD_SWITCH_KEY);
+        if (switchPressed && !worldSwitchLocked) {
             if (darkWorld) {
                 darkWorld = false;
             } else if (energy > MIN_DARK_ENERGY) {
                 darkWorld = true;
             }
-            shiftLocked = true;
+            worldSwitchLocked = true;
         }
     }
 
@@ -348,9 +351,10 @@ public final class Level14 extends BaseLevel {
             root.setBackground(new Background(new BackgroundFill(Color.web("#0f172a"), CornerRadii.EMPTY, Insets.EMPTY)));
             double centerX = player.getX() + player.getWidth() * 0.5;
             double centerY = player.getY() + player.getHeight() * 0.5;
-            darkLayer.getChildren().setAll(createDarkMask(centerX, centerY));
+            darkLayer.getChildren().setAll(createDarkOverlay(centerX, centerY, getCurrentLightRadius()));
         } else {
             root.setBackground(new Background(new BackgroundFill(Color.web("#f8fafc"), CornerRadii.EMPTY, Insets.EMPTY)));
+            darkLayer.getChildren().clear();
         }
         darkLayer.setVisible(darkWorld);
 
@@ -391,7 +395,7 @@ public final class Level14 extends BaseLevel {
         player.resetToSpawn();
         solidPreviousX = player.getX();
         darkWorld = false;
-        shiftLocked = false;
+        worldSwitchLocked = false;
         energy = ENERGY_START;
 
         if (loseKey) {
@@ -411,7 +415,7 @@ public final class Level14 extends BaseLevel {
 
         if (newState) {
             activeKeys.clear();
-            shiftLocked = false;
+            worldSwitchLocked = false;
         } else {
             lastFrame = -1;
         }
@@ -427,11 +431,27 @@ public final class Level14 extends BaseLevel {
         return Color.web("#22c55e");
     }
 
-    private Shape createDarkMask(double playerX, double playerY) {
-        Rectangle darkBackground = new Rectangle(config.getWorldWidth(), config.getWorldHeight());
-        Circle hole = new Circle(playerX, playerY, LIGHT_RADIUS);
-        Shape mask = Shape.subtract(darkBackground, hole);
-        mask.setFill(Color.rgb(3, 7, 18, 0.88));
-        return mask;
+    private double getCurrentLightRadius() {
+        double energyRatio = energy / ENERGY_MAX;
+        return MIN_LIGHT_RADIUS + (MAX_LIGHT_RADIUS - MIN_LIGHT_RADIUS) * energyRatio;
+    }
+
+    private Rectangle createDarkOverlay(double playerX, double playerY, double radius) {
+        Rectangle darkOverlay = new Rectangle(config.getWorldWidth(), config.getWorldHeight());
+        darkOverlay.setFill(new RadialGradient(
+            0,
+            0,
+            playerX,
+            playerY,
+            radius,
+            false,
+            CycleMethod.NO_CYCLE,
+            new Stop(0, Color.rgb(3, 7, 18, 0.06)),
+            new Stop(LIGHT_CORE_RATIO, Color.rgb(3, 7, 18, 0.18)),
+            new Stop(LIGHT_MID_RATIO, Color.rgb(3, 7, 18, 0.72)),
+            new Stop(1, Color.rgb(0, 0, 0, 1.0))
+        ));
+        darkOverlay.setMouseTransparent(true);
+        return darkOverlay;
     }
 }
