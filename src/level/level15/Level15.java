@@ -2,7 +2,9 @@ package level.level15;
 
 import config.GameConfig;
 import core.AppRouter;
+import entity.MovePlatform;
 import level.BaseLevel;
+import javafx.scene.paint.Color;
 
 /*
  * Concrete scene implementation for Level 3.
@@ -39,6 +41,9 @@ public final class Level15 extends BaseLevel {
         addBlock(620, config.getWorldHeight() - 40, config.getWorldWidth() - 620, 40);
         addBlock(180, 360, 150, 24);
         addBlock(520, 280, 160, 24);
+        addMovePlatform(220, 660, 90, 20, Color.web("#0ea5e9"), MovePlatform.Direction.HORIZONTAL, 220, 470, 90);
+        addTrap(220, config.getWorldHeight() - 100, 80, 20, Color.web("#ef4444"));
+        addTrap(540, config.getWorldHeight() - 100, 80, 20, Color.web("#ef4444"));
         setGoal(config.getWorldWidth() - 90, 208);
     }
 
