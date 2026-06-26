@@ -3,8 +3,10 @@ package level;
 import config.GameConfig;
 import core.AppRouter;
 import entity.Block;
+import entity.MovePlatform;
 import entity.Player;
 import entity.SolidBlock;
+import entity.Trap;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,13 +33,16 @@ public abstract class BaseLevel {
     protected final AppRouter router;
     protected final Pane root = new Pane();
     protected final List<Block> blocks = new ArrayList<>();
+    protected final List<MovePlatform> movePlatforms = new ArrayList<>();
     protected final List<SolidBlock> solidBlocks = new ArrayList<>();
+    protected final List<Trap> traps = new ArrayList<>();
     protected final Set<KeyCode> activeKeys = new HashSet<>();
     protected Player player;
     protected Rectangle goal;
     protected VBox pauseMenu;
     protected StackPane overlay;
     protected double solidPreviousX;
+    protected MovePlatform activeMovePlatform;
 
     private AnimationTimer timer;
     private boolean changingLevel;
@@ -91,6 +96,28 @@ public abstract class BaseLevel {
         SolidBlock block = new SolidBlock(x, y, width, height, config.getBlockColor());
         solidBlocks.add(block);
         root.getChildren().add(block.getNode());
+    }
+
+    protected void addMovePlatform(
+            double x,
+            double y,
+            double width,
+            double height,
+            Color color,
+            MovePlatform.Direction direction,
+            double minBound,
+            double maxBound,
+            double speed) {
+        MovePlatform platform =
+                new MovePlatform(x, y, width, height, color, direction, minBound, maxBound, speed);
+        movePlatforms.add(platform);
+        root.getChildren().add(platform.getNode());
+    }
+
+    protected void addTrap(double x, double y, double width, double height, Color color) {
+        Trap trap = new Trap(x, y, width, height, color);
+        traps.add(trap);
+        root.getChildren().add(trap.getNode());
     }
 
     protected void setGoal(double x, double y) {
@@ -281,6 +308,14 @@ public abstract class BaseLevel {
             return;
         }
 
+        for (MovePlatform platform : movePlatforms) {
+            platform.update(deltaSeconds);
+        }
+
+        if (activeMovePlatform != null) {
+            player.moveBy(activeMovePlatform.getDeltaX(), activeMovePlatform.getDeltaY());
+        }
+
         player.handleInput(activeKeys, config.getControlConfig(), config.getMoveSpeed(), config.getJumpVelocity());
         player.applyPhysics(deltaSeconds, config.getGravity());
         resolveCollisions();
@@ -290,6 +325,7 @@ public abstract class BaseLevel {
 
     private void resolveCollisions() {
         player.setOnGround(false);
+        activeMovePlatform = null;
 
         for (Block block : blocks) {
             if (!player.getBounds().intersects(block.getBounds())) {
@@ -299,6 +335,77 @@ public abstract class BaseLevel {
             double previousBottom = player.getPreviousY() + player.getHeight();
             if (player.getVelocityY() >= 0 && previousBottom <= block.getY() + 16) {
                 player.landOn(block.getY());
+            }
+        }
+
+        for (MovePlatform platform : movePlatforms) {
+            if (!player.getBounds().intersects(platform.getBounds())) {
+                continue;
+            }
+
+            double playerLeft = player.getX();
+            double playerRight = player.getX() + player.getWidth();
+            double playerTop = player.getY();
+            double playerBottom = player.getY() + player.getHeight();
+
+            double blockLeft = platform.getX();
+            double blockRight = platform.getX() + platform.getWidth();
+            double blockTop = platform.getY();
+            double blockBottom = platform.getY() + platform.getHeight();
+
+            double previousLeft = playerLeft;
+            double previousRight = playerRight;
+            if (platform.getDirection() == MovePlatform.Direction.HORIZONTAL) {
+                previousLeft -= platform.getDeltaX();
+                previousRight -= platform.getDeltaX();
+            }
+
+            double previousTop = player.getPreviousY();
+            double previousBottom = player.getPreviousY() + player.getHeight();
+
+            if (player.getVelocityY() >= 0 && previousBottom <= blockTop + 16) {
+                player.landOn(blockTop);
+                activeMovePlatform = platform;
+                continue;
+            }
+
+            if (player.getVelocityY() < 0 && previousTop >= blockBottom - 16) {
+                player.hitCeiling(blockBottom);
+                continue;
+            }
+
+            if (previousRight <= blockLeft) {
+                player.setPosition(blockLeft - player.getWidth(), player.getY());
+                continue;
+            }
+
+            if (previousLeft >= blockRight) {
+                player.setPosition(blockRight, player.getY());
+                continue;
+            }
+
+            double overlapLeft = playerRight - blockLeft;
+            double overlapRight = blockRight - playerLeft;
+            double overlapTop = playerBottom - blockTop;
+            double overlapBottom = blockBottom - playerTop;
+            double smallest = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
+
+            if (smallest == overlapTop) {
+                player.landOn(blockTop);
+                activeMovePlatform = platform;
+            } else if (smallest == overlapBottom) {
+                player.hitCeiling(blockBottom);
+            } else if (smallest == overlapLeft) {
+                player.setPosition(blockLeft - player.getWidth(), player.getY());
+            } else {
+                player.setPosition(blockRight, player.getY());
+            }
+        }
+
+        for (Trap trap : traps) {
+            if (player.getBounds().intersects(trap.getBounds())) {
+                player.resetToSpawn();
+                return;
             }
         }
     }
