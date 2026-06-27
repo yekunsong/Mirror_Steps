@@ -682,7 +682,7 @@ public final class Level7 extends BaseLevel {
                 new Stop(0.0, Color.rgb(0, 0, 0, 0.0)),
                 new Stop(0.45, Color.rgb(0, 0, 0, 0.0)),
                 new Stop(LIGHT_EDGE_START, Color.rgb(0, 0, 0, 0.55)),
-                new Stop(1.0, Color.rgb(0, 0, 0, 0.98))
+                new Stop(1.0, Color.rgb(0, 0, 0, 1))
         );
 
         gc.setFill(playerLightGradient);
@@ -721,45 +721,6 @@ public final class Level7 extends BaseLevel {
 
         gc.fill();
     }
- 
-    /*private void updateDarknessLayer() {
-        double centerX = player.getX() + player.getWidth() * 0.5;
-        double centerY = player.getY() + player.getHeight() * 0.5;
-
-        // Use brighter radius if player has the key (flashlight effect)
-        double currentRadius = hasKey ? FLASHLIGHT_RADIUS : LIGHT_RADIUS;
-
-        lightOverlay.setFill(new RadialGradient(
-                0,
-                0,
-                centerX,
-                centerY,
-                currentRadius,
-                false,
-                CycleMethod.NO_CYCLE,
-                new Stop(0.0, Color.rgb(0, 0, 0, 0.0)),
-                new Stop(0.45, Color.rgb(0, 0, 0, 0.0)),
-                new Stop(LIGHT_EDGE_START, Color.rgb(0, 0, 0, 0.55)),
-                new Stop(1.0, Color.rgb(0, 0, 0, 0.98))));
-    }*/
-    
-    /*private void updateDarknessLayer() { 
-        double centerX = player.getX() + player.getWidth() * 0.5; 
-        double centerY = player.getY() + player.getHeight() * 0.5; 
- 
-        lightOverlay.setFill(new RadialGradient( 
-                0, 
-                0, 
-                centerX, 
-                centerY, 
-                LIGHT_RADIUS, 
-                false, 
-                CycleMethod.NO_CYCLE, 
-                new Stop(0.0, Color.rgb(0, 0, 0, 0.0)), 
-                new Stop(0.45, Color.rgb(0, 0, 0, 0.0)), 
-                new Stop(LIGHT_EDGE_START, Color.rgb(0, 0, 0, 0.55)), 
-                new Stop(1.0, Color.rgb(0, 0, 0, 0.98)))); 
-    }*/
  
     private void togglePause(boolean newState) { 
         paused = newState; 
