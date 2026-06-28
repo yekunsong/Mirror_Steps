@@ -92,8 +92,20 @@ public abstract class BaseLevel {
         root.getChildren().add(block.getNode());
     }
 
+    protected void addBlock(double x, double y, double width, double height, String imagePath) {
+        Block block = new Block(x, y, width, height, config.getBlockColor(), imagePath);
+        blocks.add(block);
+        root.getChildren().add(block.getNode());
+    }
+
     protected void addSolidBlock(double x, double y, double width, double height) {
         SolidBlock block = new SolidBlock(x, y, width, height, config.getBlockColor());
+        solidBlocks.add(block);
+        root.getChildren().add(block.getNode());
+    }
+
+    protected void addSolidBlock(double x, double y, double width, double height, String imagePath) {
+        SolidBlock block = new SolidBlock(x, y, width, height, config.getBlockColor(), imagePath);
         solidBlocks.add(block);
         root.getChildren().add(block.getNode());
     }
@@ -114,8 +126,31 @@ public abstract class BaseLevel {
         root.getChildren().add(platform.getNode());
     }
 
+    protected void addMovePlatform(
+            double x,
+            double y,
+            double width,
+            double height,
+            Color color,
+            String imagePath,
+            MovePlatform.Direction direction,
+            double minBound,
+            double maxBound,
+            double speed) {
+        MovePlatform platform =
+                new MovePlatform(x, y, width, height, color, imagePath, direction, minBound, maxBound, speed);
+        movePlatforms.add(platform);
+        root.getChildren().add(platform.getNode());
+    }
+
     protected void addTrap(double x, double y, double width, double height, Color color) {
         Trap trap = new Trap(x, y, width, height, color);
+        traps.add(trap);
+        root.getChildren().add(trap.getNode());
+    }
+
+    protected void addTrap(double x, double y, double width, double height, Color color, String imagePath) {
+        Trap trap = new Trap(x, y, width, height, color, imagePath);
         traps.add(trap);
         root.getChildren().add(trap.getNode());
     }
