@@ -182,19 +182,22 @@ public final class Level14 extends BaseLevel {
         addSolidBlock(1020, 160, 80, 128);
         addSolidBlock(1100, 200, 60, 24);
         addSolidBlock(860, 580, 60, 120);
-        addSolidBlock(1160, 600, 120, 24);
-        addSolidBlock(900, 432, 80, 24);
+        addSolidBlock(1160, 624, 120, 24);
+        addSolidBlock(860, 408, 80, 24);
+        addSolidBlock(920, 456, 80, 24);
+        addSolidBlock(980, 504, 80, 24);
+        
         
         // Move platforms are placed after all static collision surfaces.
         centerDoorPlatform = addLevelMovePlatform(480, 120, 180, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 480, 600, 68);
         centerPitPlatform = addLevelMovePlatform(420, 300, 140, 24, PLATFORM_COLOR, MovePlatform.Direction.VERTICAL, 300, 372, 80);
         
-        addLevelMovePlatform(800, 180, 120, 24, PLATFORM_COLOR, MovePlatform.Direction.VERTICAL, 180, 252, 80);
-        rightPitPlatform = addLevelMovePlatform(1038, 520, 102, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 1038, 1118, 68);
+        addLevelMovePlatform(800, 204, 120, 24, PLATFORM_COLOR, MovePlatform.Direction.VERTICAL, 204, 276, 80);
+        rightPitPlatform = addLevelMovePlatform(1038, 560, 96, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 1038, 1100, 68);
         addLevelMovePlatform(240, 576, 160, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 240, 360, 80);
 
         // Trap strips translated from the concept art.
-        addTrap(80, 264, 126, 24, TRAP_COLOR);
+        addTrap(80, 264, 108, 24, TRAP_COLOR);
         addTrap(100, 456, 100, 24, TRAP_COLOR);
         addTrap(240, 660, 320, 60, TRAP_COLOR);
         addTrap(744, 690, 186, 24, TRAP_COLOR);
