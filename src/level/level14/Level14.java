@@ -2,6 +2,8 @@ package level.level14;
 
 import config.GameConfig;
 import core.AppRouter;
+import entity.Door;
+import entity.Key;
 import entity.MovePlatform;
 import entity.SolidBlock;
 import entity.Trap;
@@ -49,6 +51,7 @@ public final class Level14 extends BaseLevel {
     private static final double MAX_LIGHT_RADIUS = 130;
     private static final double LIGHT_CORE_RATIO = 0.2;
     private static final double LIGHT_MID_RATIO = 0.58;
+    private static final double COLLISION_PADDING = 16;
 
     private static final int TOTAL_KEYS = 3;
     private static final double DOOR_WIDTH = 52;
@@ -60,15 +63,16 @@ public final class Level14 extends BaseLevel {
 
     private static final Color PLATFORM_COLOR = Color.web("#38bdf8");
     private static final Color TRAP_COLOR = Color.web("#ef4444");
+    private static final String SOLID_BLOCK_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Platforms\\gold.png";
+    private static final String PLATFORM_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Platforms\\blue.png";
+    private static final String TRAP_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Platforms\\red.png";
 
     private final Rectangle energyTrack = new Rectangle();
     private final Rectangle energyBar = new Rectangle();
-    private final Rectangle door = new Rectangle(DOOR_WIDTH, DOOR_HEIGHT);
     private final Label doorLabel = new Label("DOOR");
-    private final Label doorStatusLabel = new Label();
+    private final Door door = new Door(0, 0, DOOR_WIDTH, DOOR_HEIGHT);
     private final Pane darkLayer = new Pane();
-    private final List<Rectangle> keyNodes = new ArrayList<>();
-    private final List<Label> keyLabels = new ArrayList<>();
+    private final List<Key> keyNodes = new ArrayList<>();
     private final List<AttachedNode> attachedNodes = new ArrayList<>();
     private final boolean[] collectedKeys = new boolean[TOTAL_KEYS];
 
@@ -110,32 +114,8 @@ public final class Level14 extends BaseLevel {
 
     @Override
     public Scene createScene() {
-        root.getChildren().clear();
-        blocks.clear();
-        movePlatforms.clear();
-        solidBlocks.clear();
-        traps.clear();
-        activeKeys.clear();
-        keyNodes.clear();
-        keyLabels.clear();
-        attachedNodes.clear();
-        paused = false;
-        finished = false;
-        darkWorld = false;
-        worldSwitchLocked = false;
-        energy = ENERGY_START;
-        lastFrame = -1;
-        activeMovePlatform = null;
-        centerDoorPlatform = null;
-        rightPitPlatform = null;
-        centerPitPlatform = null;
-
-        for (int index = 0; index < TOTAL_KEYS; index++) {
-            collectedKeys[index] = false;
-        }
-
-        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        root.setBackground(new Background(new BackgroundFill(Color.web("#f8fafc"), CornerRadii.EMPTY, Insets.EMPTY)));
+        resetLevelState();
+        configureSceneRoot();
 
         createLevelPlayer();
         buildLevel();
@@ -162,52 +142,108 @@ public final class Level14 extends BaseLevel {
     @Override
     protected void buildLevel() {
         // Base floor and safe landing segments.
-        addSolidBlock(0, 660, 240, 60);
-        addSolidBlock(560, 660, 300, 60);
+        addSolidBlock(0, 660, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(0, 690, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(80, 660, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(80, 690, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(160, 660, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(160, 690, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(560, 660, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(560, 690, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(640, 660, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(640, 690, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(720, 660, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(720, 690, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(800, 660, 80, 30, SOLID_BLOCK_IMAGE);
+        addSolidBlock(800, 690, 80, 30, SOLID_BLOCK_IMAGE);
         
         // Left-side climb and room shell.
-        addSolidBlock(0, 240, 80, 24);
-        addSolidBlock(0, 264, 360, 24);
-        addSolidBlock(0, 480, 120, 24);
-        addSolidBlock(100, 456, 120, 24);
-        addSolidBlock(200, 432, 120, 24);
-        addSolidBlock(0, 0, 320, 24);
-        addSolidBlock(300, 0, 20, 148);
-        addSolidBlock(120, 124, 180, 24);
-
+        addSolidBlock(0, 240, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(0, 264, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(0, 264, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(0, 264, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(0, 264, 80, 24, SOLID_BLOCK_IMAGE);
+        
+        addSolidBlock(0, 480, 120, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(100, 456, 120, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(200, 432, 120, 24, SOLID_BLOCK_IMAGE);
+        
+        addSolidBlock(0, 0, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(80, 0, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(160, 0, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(240, 0, 80, 24, SOLID_BLOCK_IMAGE);
+        
+        addSolidBlock(300, 0, 20, 148, SOLID_BLOCK_IMAGE);
+        addSolidBlock(140, 124, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(220, 124, 80, 24, SOLID_BLOCK_IMAGE);
+        
         // Central and right-side fixed structures.
-        addSolidBlock(880, 0, 400, 24);
-        addSolidBlock(560, 480, 200, 24);
-        addSolidBlock(1020, 288, 440, 24);
-        addSolidBlock(1020, 160, 80, 128);
-        addSolidBlock(1100, 200, 60, 24);
-        addSolidBlock(860, 580, 60, 120);
-        addSolidBlock(1160, 624, 120, 24);
-        addSolidBlock(860, 408, 80, 24);
-        addSolidBlock(920, 456, 80, 24);
-        addSolidBlock(980, 504, 80, 24);
+        addSolidBlock(880, 0, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(960, 0, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(1040, 0, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(1120, 0, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(1200, 0, 80, 24, SOLID_BLOCK_IMAGE);
+        
+        addSolidBlock(560, 480, 100, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(660, 480, 100, 24, SOLID_BLOCK_IMAGE);
+        
+        addSolidBlock(1020, 288, 88, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(1108, 288, 88, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(1196, 288, 88, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(1284, 288, 88, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(1072, 288, 88, 24, SOLID_BLOCK_IMAGE);
+        
+        addSolidBlock(1020, 160, 80, 128, SOLID_BLOCK_IMAGE);
+        
+        addSolidBlock(1100, 200, 60, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(860, 580, 60, 120, SOLID_BLOCK_IMAGE);
+        addSolidBlock(1160, 624, 120, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(860, 408, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(920, 456, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(980, 504, 80, 24, SOLID_BLOCK_IMAGE);
         
         
         // Move platforms are placed after all static collision surfaces.
-        centerDoorPlatform = addLevelMovePlatform(480, 120, 180, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 480, 600, 68);
-        centerPitPlatform = addLevelMovePlatform(420, 300, 140, 24, PLATFORM_COLOR, MovePlatform.Direction.VERTICAL, 300, 372, 80);
-        
-        addLevelMovePlatform(800, 204, 120, 24, PLATFORM_COLOR, MovePlatform.Direction.VERTICAL, 204, 276, 80);
-        rightPitPlatform = addLevelMovePlatform(1038, 560, 96, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 1038, 1100, 68);
-        addLevelMovePlatform(240, 576, 160, 24, PLATFORM_COLOR, MovePlatform.Direction.HORIZONTAL, 240, 360, 80);
+        centerDoorPlatform = new MovePlatform(480, 120, 180, 24, PLATFORM_COLOR, PLATFORM_IMAGE, MovePlatform.Direction.HORIZONTAL, 480, 600, 68);
+        centerPitPlatform = new MovePlatform(420, 300, 140, 24, PLATFORM_COLOR, PLATFORM_IMAGE, MovePlatform.Direction.VERTICAL, 300, 372, 80);
+        rightPitPlatform = new MovePlatform(1038, 560, 96, 24, PLATFORM_COLOR, PLATFORM_IMAGE, MovePlatform.Direction.HORIZONTAL, 1038, 1100, 68);
+
+        MovePlatform upperRightPlatform = new MovePlatform(800, 204, 120, 24, PLATFORM_COLOR, PLATFORM_IMAGE, MovePlatform.Direction.VERTICAL, 204, 276, 80);
+        MovePlatform lowerCenterPlatform = new MovePlatform(240, 576, 160, 24, PLATFORM_COLOR, PLATFORM_IMAGE, MovePlatform.Direction.HORIZONTAL, 240, 360, 80);
+
+        movePlatforms.add(centerDoorPlatform);
+        movePlatforms.add(centerPitPlatform);
+        movePlatforms.add(rightPitPlatform);
+        movePlatforms.add(upperRightPlatform);
+        movePlatforms.add(lowerCenterPlatform);
+
+        for (MovePlatform platform : movePlatforms) {
+            root.getChildren().add(platform.getNode());
+        }
 
         // Trap strips translated from the concept art.
-        addTrap(80, 264, 108, 24, TRAP_COLOR);
-        addTrap(100, 456, 100, 24, TRAP_COLOR);
-        addTrap(240, 660, 320, 60, TRAP_COLOR);
-        addTrap(744, 690, 186, 24, TRAP_COLOR);
-        addTrap(560, 504, 200, 24, TRAP_COLOR);
-        addTrap(1020, 136, 80, 24, TRAP_COLOR);
-        addAttachedTrap(rightPitPlatform, 0, 0, 102, 24, TRAP_COLOR);
-//        addTrap(960, 660, 344, 60, TRAP_COLOR);
+        Trap leftTrap = new Trap(80, 264, 108, 24, TRAP_COLOR, TRAP_IMAGE);
+        Trap leftMidTrap = new Trap(100, 456, 100, 24, TRAP_COLOR, TRAP_IMAGE);
+        Trap bottomTrap = new Trap(240, 660, 320, 60, TRAP_COLOR, TRAP_IMAGE);
+        Trap rightBottomTrap = new Trap(744, 690, 186, 24, TRAP_COLOR, TRAP_IMAGE);
+        Trap centerTrap = new Trap(560, 504, 200, 24, TRAP_COLOR, TRAP_IMAGE);
+        Trap upperTrap = new Trap(1020, 136, 80, 24, TRAP_COLOR, TRAP_IMAGE);
+        Trap attachedTrap = new Trap(rightPitPlatform.getX(), rightPitPlatform.getY(), 102, 24, TRAP_COLOR, TRAP_IMAGE);
 
-        setGoal(660, 92);
-        goal.setVisible(false);
+        traps.add(leftTrap);
+        traps.add(leftMidTrap);
+        traps.add(bottomTrap);
+        traps.add(rightBottomTrap);
+        traps.add(centerTrap);
+        traps.add(upperTrap);
+        traps.add(attachedTrap);
+
+        for (Trap trap : traps) {
+            root.getChildren().add(trap.getNode());
+        }
+
+        attachedNodes.add(new AttachedNode(rightPitPlatform, attachedTrap.getNode(), 0, 0));
+
     }
     
     @Override
@@ -237,51 +273,47 @@ public final class Level14 extends BaseLevel {
         solidPreviousX = player.getX();
     }
 
-    private MovePlatform addLevelMovePlatform(
-            double x,
-            double y,
-            double width,
-            double height,
-            Color color,
-            MovePlatform.Direction direction,
-            double minBound,
-            double maxBound,
-            double speed) {
-        MovePlatform platform = new MovePlatform(x, y, width, height, color, direction, minBound, maxBound, speed);
-        movePlatforms.add(platform);
-        root.getChildren().add(platform.getNode());
-        return platform;
+    private void resetLevelState() {
+        root.getChildren().clear();
+        blocks.clear();
+        movePlatforms.clear();
+        solidBlocks.clear();
+        traps.clear();
+        activeKeys.clear();
+        keyNodes.clear();
+        attachedNodes.clear();
+        paused = false;
+        finished = false;
+        darkWorld = false;
+        worldSwitchLocked = false;
+        energy = ENERGY_START;
+        lastFrame = -1;
+        activeMovePlatform = null;
+        centerDoorPlatform = null;
+        rightPitPlatform = null;
+        centerPitPlatform = null;
+
+        for (int index = 0; index < TOTAL_KEYS; index++) {
+            collectedKeys[index] = false;
+        }
     }
 
-    private void addAttachedTrap(
-            MovePlatform anchor,
-            double offsetX,
-            double offsetY,
-            double width,
-            double height,
-            Color color) {
-        Trap trap = new Trap(anchor.getX() + offsetX, anchor.getY() + offsetY, width, height, color);
-        traps.add(trap);
-        root.getChildren().add(trap.getNode());
-        attachedNodes.add(new AttachedNode(anchor, trap.getNode(), offsetX, offsetY));
+    private void configureSceneRoot() {
+        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        root.setBackground(new Background(new BackgroundFill(Color.web("#f8fafc"), CornerRadii.EMPTY, Insets.EMPTY)));
     }
 
     private void buildObjects() {
-        door.setArcWidth(14);
-        door.setArcHeight(14);
-        door.setStrokeWidth(3);
-        root.getChildren().addAll(door, doorLabel, doorStatusLabel);
+        root.getChildren().addAll(door.getNode(), doorLabel);
 
-        attachNode(centerDoorPlatform, door, (centerDoorPlatform.getWidth() - DOOR_WIDTH) * 0.5, -DOOR_HEIGHT);
+        attachNode(centerDoorPlatform, door.getNode(), (centerDoorPlatform.getWidth() - DOOR_WIDTH) * 0.5, -DOOR_HEIGHT);
 
         styleFloatingLabel(doorLabel, Color.web("#fde68a"));
-        styleFloatingLabel(doorStatusLabel, Color.web("#e2e8f0"));
         attachNode(centerDoorPlatform, doorLabel, (centerDoorPlatform.getWidth() - DOOR_WIDTH) * 0.5 - 4, -DOOR_HEIGHT - 36);
-        attachNode(centerDoorPlatform, doorStatusLabel, (centerDoorPlatform.getWidth() - 102) * 0.5, -DOOR_HEIGHT - 22);
 
-        addKeyObject(252, 64, "KEY 1");
-        addKeyObject(1192, 246, "KEY 2");
-        addKeyObject(1200, 536, "KEY 3");
+        addKeyObject(252, 64);
+        addKeyObject(1192, 246);
+        addKeyObject(1200, 536);
     }
 
     private void attachNode(MovePlatform anchor, Node node, double offsetX, double offsetY) {
@@ -290,21 +322,11 @@ public final class Level14 extends BaseLevel {
         attachedNode.sync();
     }
     
-    private void addKeyObject(double x, double y, String labelText) {
-        Rectangle keyNode = new Rectangle(KEY_SIZE, KEY_SIZE);
-        keyNode.setArcWidth(10);
-        keyNode.setArcHeight(10);
-        keyNode.setLayoutX(x);
-        keyNode.setLayoutY(y);
-
-        Label label = new Label(labelText);
-        styleFloatingLabel(label, Color.web("#fde68a"));
-        label.setLayoutX(x - 6);
-        label.setLayoutY(y - 22);
+    private void addKeyObject(double x, double y) {
+        Key keyNode = new Key(x, y, KEY_SIZE);
 
         keyNodes.add(keyNode);
-        keyLabels.add(label);
-        root.getChildren().addAll(keyNode, label);
+        root.getChildren().add(keyNode.getNode());
     }
 
     private void styleFloatingLabel(Label label, Color textColor) {
@@ -433,6 +455,10 @@ public final class Level14 extends BaseLevel {
             player.moveBy(activeMovePlatform.getDeltaX(), activeMovePlatform.getDeltaY());
         }
 
+        if (checkTrapCollision()) {
+            return;
+        }
+
         solidPreviousX = player.getX();
         player.handleInput(activeKeys, config.getControlConfig(), MOVE_SPEED, JUMP_SPEED);
         player.applyPhysics(deltaSeconds, GRAVITY);
@@ -484,66 +510,8 @@ public final class Level14 extends BaseLevel {
         resolveSolidCollisions();
 
         for (MovePlatform platform : movePlatforms) {
-            if (!player.getBounds().intersects(platform.getBounds())) {
-                continue;
-            }
-
-            double playerLeft = player.getX();
-            double playerRight = player.getX() + player.getWidth();
-            double playerTop = player.getY();
-            double playerBottom = player.getY() + player.getHeight();
-
-            double blockLeft = platform.getX();
-            double blockRight = platform.getX() + platform.getWidth();
-            double blockTop = platform.getY();
-            double blockBottom = platform.getY() + platform.getHeight();
-
-            double previousLeft = playerLeft;
-            double previousRight = playerRight;
-            if (platform.getDirection() == MovePlatform.Direction.HORIZONTAL) {
-                previousLeft -= platform.getDeltaX();
-                previousRight -= platform.getDeltaX();
-            }
-
-            double previousTop = player.getPreviousY();
-            double previousBottom = player.getPreviousY() + player.getHeight();
-
-            if (player.getVelocityY() >= 0 && previousBottom <= blockTop + 16) {
-                player.landOn(blockTop);
+            if (resolvePlatformCollision(platform)) {
                 activeMovePlatform = platform;
-                continue;
-            }
-
-            if (player.getVelocityY() < 0 && previousTop >= blockBottom - 16) {
-                player.hitCeiling(blockBottom);
-                continue;
-            }
-
-            if (previousRight <= blockLeft) {
-                player.setPosition(blockLeft - player.getWidth(), player.getY());
-                continue;
-            }
-
-            if (previousLeft >= blockRight) {
-                player.setPosition(blockRight, player.getY());
-                continue;
-            }
-
-            double overlapLeft = playerRight - blockLeft;
-            double overlapRight = blockRight - playerLeft;
-            double overlapTop = playerBottom - blockTop;
-            double overlapBottom = blockBottom - playerTop;
-            double smallest = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
-
-            if (smallest == overlapTop) {
-                player.landOn(blockTop);
-                activeMovePlatform = platform;
-            } else if (smallest == overlapBottom) {
-                player.hitCeiling(blockBottom);
-            } else if (smallest == overlapLeft) {
-                player.setPosition(blockLeft - player.getWidth(), player.getY());
-            } else {
-                player.setPosition(blockRight, player.getY());
             }
         }
     }
@@ -584,20 +552,15 @@ public final class Level14 extends BaseLevel {
     
     private void checkKeys() {
         for (int index = 0; index < TOTAL_KEYS; index++) {
-            Rectangle keyNode = keyNodes.get(index);
-            Label label = keyLabels.get(index);
+            Key keyNode = keyNodes.get(index);
             boolean keyVisible = darkWorld && !collectedKeys[index];
             keyNode.setVisible(keyVisible);
-            label.setVisible(keyVisible);
 
-            if (!collectedKeys[index] && darkWorld && player.getBounds().intersects(keyNode.getBoundsInParent())) {
+            if (!collectedKeys[index] && darkWorld && player.getBounds().intersects(keyNode.getBounds())) {
                 collectedKeys[index] = true;
-                keyNode.setVisible(false);
-                label.setVisible(false);
+                keyNode.setCollected(true);
             }
         }
-
-        doorStatusLabel.setText(getCollectedKeyCount() + " / " + TOTAL_KEYS + " KEYS");
     }
 
     private void updateView() {
@@ -622,18 +585,12 @@ public final class Level14 extends BaseLevel {
             trap.getNode().setOpacity(darkWorld ? 0.9 : 1.0);
         }
 
-        int keyCount = getCollectedKeyCount();
-        boolean doorUnlocked = keyCount == TOTAL_KEYS;
+        boolean doorUnlocked = getCollectedKeyCount() == TOTAL_KEYS;
 
-        door.setFill(doorUnlocked ? Color.web("#84cc16") : Color.web("#7c3aed"));
-        door.setStroke(darkWorld ? Color.web("#c4b5fd") : Color.web("#ede9fe"));
-        door.setOpacity(darkWorld ? 0.35 : 1.0);
+        door.refreshStyle(doorUnlocked, darkWorld);
 
-        doorStatusLabel.setTextFill(doorUnlocked ? Color.web("#bef264") : Color.web("#e2e8f0"));
-
-        for (Rectangle keyNode : keyNodes) {
-            keyNode.setFill(Color.web("#facc15"));
-            keyNode.setStroke(Color.web("#fef08a"));
+        for (Key keyNode : keyNodes) {
+            keyNode.refreshStyle();
         }
 
         double energyHeight = 50 * (energy / ENERGY_MAX);
@@ -652,7 +609,7 @@ public final class Level14 extends BaseLevel {
             return;
         }
 
-        if (player.getBounds().intersects(door.getBoundsInParent())) {
+        if (player.getBounds().intersects(door.getBounds())) {
             finished = true;
             onGoalReached();
         }
@@ -711,6 +668,63 @@ public final class Level14 extends BaseLevel {
         return Color.web("#22c55e");
     }
 
+    private boolean resolvePlatformCollision(MovePlatform platform) {
+        if (!player.getBounds().intersects(platform.getBounds())) {
+            return false;
+        }
+
+        double playerLeft = player.getX();
+        double playerRight = player.getX() + player.getWidth();
+        double playerTop = player.getY();
+        double playerBottom = player.getY() + player.getHeight();
+
+        double platformLeft = platform.getX();
+        double platformRight = platform.getX() + platform.getWidth();
+        double platformTop = platform.getY();
+        double platformBottom = platform.getY() + platform.getHeight();
+
+        double previousTop = player.getPreviousY();
+        double previousBottom = player.getPreviousY() + player.getHeight();
+
+        if (player.getVelocityY() >= 0 && previousBottom <= platformTop + COLLISION_PADDING) {
+            player.landOn(platformTop);
+            return true;
+        }
+
+        if (player.getVelocityY() < 0 && previousTop >= platformBottom - COLLISION_PADDING) {
+            dropFromMovePlatform(platform);
+            return false;
+        }
+
+        double overlapLeft = playerRight - platformLeft;
+        double overlapRight = platformRight - playerLeft;
+        double overlapTop = playerBottom - platformTop;
+        double overlapBottom = platformBottom - playerTop;
+        double smallest = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
+
+        if (smallest == overlapBottom) {
+            dropFromMovePlatform(platform);
+            return false;
+        }
+        if (smallest == overlapTop) {
+            player.landOn(platformTop);
+            return true;
+        }
+        if (smallest == overlapLeft) {
+            player.setPosition(platformLeft - player.getWidth(), player.getY());
+        } else {
+            player.setPosition(platformRight, player.getY());
+        }
+        return false;
+    }
+
+    private void dropFromMovePlatform(MovePlatform platform) {
+        double platformBottom = platform.getY() + platform.getHeight();
+        player.hitCeiling(platformBottom);
+        if (platform.getDeltaY() > 0) {
+            player.moveBy(0, platform.getDeltaY());
+        }
+    }
     private double getCurrentLightRadius() {
         double energyRatio = energy / ENERGY_MAX;
         return MIN_LIGHT_RADIUS + (MAX_LIGHT_RADIUS - MIN_LIGHT_RADIUS) * energyRatio;
@@ -735,3 +749,4 @@ public final class Level14 extends BaseLevel {
         return darkOverlay;
     }
 }
+
