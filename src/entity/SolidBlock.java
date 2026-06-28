@@ -13,4 +13,9 @@ public final class SolidBlock extends GameObject {
         getView().setArcWidth(0);
         getView().setArcHeight(0);
     }
+
+    public SolidBlock(double x, double y, double width, double height, Color color, String imagePath) {
+        this(x, y, width, height, color);
+        setBackgroundImage(imagePath);
+    }
 }

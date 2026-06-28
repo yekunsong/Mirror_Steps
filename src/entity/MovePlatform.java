@@ -39,6 +39,21 @@ public final class MovePlatform extends GameObject {
         this.previousY = y;
     }
 
+    public MovePlatform(
+            double x,
+            double y,
+            double width,
+            double height,
+            Color color,
+            String imagePath,
+            Direction direction,
+            double minBound,
+            double maxBound,
+            double speed) {
+        this(x, y, width, height, color, direction, minBound, maxBound, speed);
+        setBackgroundImage(imagePath);
+    }
+
     @Override
     public void update(double deltaSeconds) {
         previousX = getX();

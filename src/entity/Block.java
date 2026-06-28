@@ -25,4 +25,9 @@ public final class Block extends GameObject {
     public Block(double x, double y, double width, double height, Color color) {
         super(x, y, width, height, color);
     }
+    
+    public Block(double x, double y, double width, double height, Color color, String imagePath) {
+        this(x, y, width, height, color);
+        setBackgroundImage(imagePath);
+    }
 }

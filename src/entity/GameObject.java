@@ -1,8 +1,12 @@
 package entity;
 
+import java.io.File;
+
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 
 /*
@@ -91,6 +95,15 @@ public abstract class GameObject {
         view.setFill(color);
     }
 
+    public void setBackgroundImage(String imagePath) {
+        Image image = loadImage(imagePath);
+        if (image == null || image.isError()) {
+            return;
+        }
+
+        view.setFill(new ImagePattern(image, 0, 0, width, height, false));
+    }
+
     protected Rectangle getView() {
         return view;
     }
@@ -102,5 +115,26 @@ public abstract class GameObject {
     private void syncView() {
         view.setLayoutX(x);
         view.setLayoutY(y);
+    }
+
+    private Image loadImage(String imagePath) {
+        if (imagePath == null || imagePath.isBlank()) {
+            return null;
+        }
+
+        File candidate = new File(imagePath);
+        if (!candidate.exists() && imagePath.startsWith("../")) {
+            candidate = new File(imagePath.substring(3));
+        }
+
+        if (!candidate.exists() && imagePath.startsWith("./")) {
+            candidate = new File(imagePath.substring(2));
+        }
+
+        if (!candidate.exists()) {
+            return null;
+        }
+
+        return new Image(candidate.toURI().toString());
     }
 }

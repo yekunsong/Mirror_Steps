@@ -1,13 +1,10 @@
 package entity;
 
 import config.GameConfig;
-import java.io.File;
 import java.util.Set;
 
-import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.ImagePattern;
 
 /*
  * Playable character object shared by all levels.
@@ -36,32 +33,41 @@ import javafx.scene.paint.ImagePattern;
  */
 public final class Player extends GameObject {
 
+    private static final String FACING_RIGHT_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Character\\facing_right.png";
+    private static final String FACING_LEFT_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Character\\facing_left.png";
+
     private final double spawnX;
     private final double spawnY;
     private double previousY;
     private double velocityX;
     private double velocityY;
     private boolean onGround;
+    private boolean facingRight = true;
 
     public Player(double x, double y, double width, double height, Color color) {
         super(x, y, width, height, color);
         this.spawnX = x;
         this.spawnY = y;
         this.previousY = y;
-        
-        // Uncommited if you want to set player image
-        // initVisuals();
+
+        initVisuals();
     }
     
     private void initVisuals() {
-    	// change to your own downloaded position(only accept "jpg" or "jfif"
-        String localPath = new File("D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Player.jpg").toURI().toString();
-        
-        Image image = new Image(localPath);
-        
-        ImagePattern imagePattern = new ImagePattern(image);
-        this.getView().setFill(imagePattern);
+        updateFacingSprite();
+    }
 
+    private void updateFacingSprite() {
+        setBackgroundImage(facingRight ? FACING_RIGHT_IMAGE : FACING_LEFT_IMAGE);
+    }
+
+    private void setFacingRight(boolean facingRight) {
+        if (this.facingRight == facingRight) {
+            return;
+        }
+
+        this.facingRight = facingRight;
+        updateFacingSprite();
     }
 
     /*
@@ -82,8 +88,10 @@ public final class Player extends GameObject {
         	moveSpeed = 250;
         }
         if (left && !right) {
+            setFacingRight(false);
             velocityX = -moveSpeed;
         } else if (right && !left) {
+            setFacingRight(true);
             velocityX = moveSpeed;
         }
 
