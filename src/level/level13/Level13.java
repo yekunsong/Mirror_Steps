@@ -2,7 +2,11 @@ package level.level13;
 
 import config.GameConfig;
 import core.AppRouter;
+import entity.Door;
+import entity.Key;
+import entity.MovePlatform;
 import entity.SolidBlock;
+import entity.Trap;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -47,12 +51,18 @@ public final class Level13 extends BaseLevel {
     private static final double DOOR_WIDTH = 52;
     private static final double DOOR_HEIGHT = 86;
     private static final double KEY_SIZE = 20;
-
+    private static final double COLLISION_PADDING = 16;
+    private static final Color PLATFORM_COLOR = Color.web("#38bdf8");
+    private static final Color TRAP_COLOR = Color.web("#ef4444");
+    private static final String SOLID_BLOCK_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Platforms\\gold.png";
+    private static final String PLATFORM_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Platforms\\blue.png";
+    private static final String TRAP_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Platforms\\red.png";
+    private static final String DOOR_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Portal\\portal_left.png";
+    
     private final Rectangle energyTrack = new Rectangle();
     private final Rectangle energyBar = new Rectangle();
-    private final Rectangle door = new Rectangle(DOOR_WIDTH, DOOR_HEIGHT);
-    private final Rectangle key = new Rectangle(KEY_SIZE, KEY_SIZE);
-    private final Label keyLabel = new Label("KEY");
+    private final Door door = new Door(0, 0, DOOR_WIDTH, DOOR_HEIGHT, DOOR_IMAGE);
+    private final Key key = new Key(0, 0, KEY_SIZE);
     private final Pane darkLayer = new Pane();
 
     private AnimationTimer timer;
@@ -65,6 +75,8 @@ public final class Level13 extends BaseLevel {
     private boolean worldSwitchLocked;
     private double energy;
     private long lastFrame = -1;
+    private MovePlatform liftPlatform;
+    private MovePlatform activeMovePlatform;
 
     public Level13(GameConfig config, AppRouter router) {
         super(config, router);
@@ -72,21 +84,8 @@ public final class Level13 extends BaseLevel {
 
     @Override
     public Scene createScene() {
-        root.getChildren().clear();
-        blocks.clear();
-        solidBlocks.clear();
-        activeKeys.clear();
-
-        paused = false;
-        finished = false;
-        darkWorld = false;
-        hasKey = false;
-        worldSwitchLocked = false;
-        energy = ENERGY_START;
-        lastFrame = -1;
-
-        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        root.setBackground(new Background(new BackgroundFill(Color.web("#f8fafc"), CornerRadii.EMPTY, Insets.EMPTY)));
+        resetLevelState();
+        configureSceneRoot();
 
         createLevelPlayer();
         buildLevel();
@@ -111,19 +110,14 @@ public final class Level13 extends BaseLevel {
 
     @Override
     protected void buildLevel() {
-        double blockW = config.getWorldWidth() / 5;
-        double blockH = config.getWorldHeight() / 5;
-
-        addSolidBlock(0, config.getWorldHeight() - blockH, blockW * 5, blockH);
-        addSolidBlock(blockW, config.getWorldHeight() - blockH * 2, blockW * 4, blockH);
-        addSolidBlock(blockW * 2, config.getWorldHeight() - blockH * 3, blockW * 3, blockH);
-
-//        addSolidBlock(0, blockH * 2, blockW * 0.5, blockH);
-//        addSolidBlock(0, blockH, blockW * 1.5, blockH);
-//        addSolidBlock(0, 0, blockW * 5, blockH);
-
-        setGoal(config.getWorldWidth() - 115, 154);
-        goal.setVisible(false);
+        addSolidBlock(100, 600, 100, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(250, 450, 100, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(400, 300, 100, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(550, 150, 100, 24, SOLID_BLOCK_IMAGE);
+        liftPlatform = new MovePlatform(700, 300, 100, 24, PLATFORM_COLOR, PLATFORM_IMAGE, MovePlatform.Direction.VERTICAL, 300, 450, 80);
+        movePlatforms.add(liftPlatform);
+        root.getChildren().add(liftPlatform.getNode());
+        addTrap(850, 400, 100, 24, TRAP_COLOR, TRAP_IMAGE);
     }
 
     @Override
@@ -153,25 +147,107 @@ public final class Level13 extends BaseLevel {
         solidPreviousX = player.getX();
     }
 
+    private void resetLevelState() {
+        root.getChildren().clear();
+        blocks.clear();
+        movePlatforms.clear();
+        solidBlocks.clear();
+        traps.clear();
+        activeKeys.clear();
+
+        paused = false;
+        finished = false;
+        darkWorld = false;
+        hasKey = false;
+        worldSwitchLocked = false;
+        energy = ENERGY_START;
+        lastFrame = -1;
+        liftPlatform = null;
+        activeMovePlatform = null;
+    }
+
+    private void configureSceneRoot() {
+        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        root.setBackground(new Background(new BackgroundFill(Color.web("#f8fafc"), CornerRadii.EMPTY, Insets.EMPTY)));
+    }
+
+    private boolean checkTrapCollision() {
+        for (Trap trap : traps) {
+            if (player.getBounds().intersects(trap.getBounds())) {
+                resetPlayer(false);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void updateMovePlatforms(double deltaSeconds) {
+        for (MovePlatform platform : movePlatforms) {
+            platform.update(deltaSeconds);
+        }
+    }
+
+    private void resolveMovePlatformCollisions() {
+        activeMovePlatform = null;
+
+        for (MovePlatform platform : movePlatforms) {
+            if (!player.getBounds().intersects(platform.getBounds())) {
+                continue;
+            }
+
+            double platformTop = platform.getY();
+            double platformBottom = platformTop + platform.getHeight();
+            double previousTop = player.getPreviousY();
+            double previousBottom = previousTop + player.getHeight();
+            double playerLeft = player.getX();
+            double playerRight = playerLeft + player.getWidth();
+            double playerTop = player.getY();
+            double playerBottom = playerTop + player.getHeight();
+            double platformLeft = platform.getX();
+            double platformRight = platformLeft + platform.getWidth();
+
+            if (player.getVelocityY() >= 0 && previousBottom <= platformTop + COLLISION_PADDING) {
+                player.landOn(platformTop);
+                activeMovePlatform = platform;
+                continue;
+            }
+
+            if (player.getVelocityY() < 0 && previousTop >= platformBottom - COLLISION_PADDING) {
+                dropFromMovePlatform(platform);
+                continue;
+            }
+
+            double overlapLeft = playerRight - platformLeft;
+            double overlapRight = platformRight - playerLeft;
+            double overlapTop = playerBottom - platformTop;
+            double overlapBottom = platformBottom - playerTop;
+            double smallest = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
+
+            if (smallest == overlapBottom) {
+                dropFromMovePlatform(platform);
+            } else if (smallest == overlapTop) {
+                player.landOn(platformTop);
+                activeMovePlatform = platform;
+            } else if (smallest == overlapLeft) {
+                player.setPosition(platformLeft - player.getWidth(), player.getY());
+            } else {
+                player.setPosition(platformRight, player.getY());
+            }
+        }
+    }
+
+    private void dropFromMovePlatform(MovePlatform platform) {
+    	double platformBottom = platform.getY() + platform.getHeight();
+        player.hitCeiling(platformBottom);
+        if (platform.getDeltaY() > 0) {
+            player.moveBy(0, platform.getDeltaY());
+        }
+    }
+
     private void buildObjects() {
-        door.setArcWidth(14);
-        door.setArcHeight(14);
-        door.setLayoutX(config.getWorldWidth() - 165);
-        door.setLayoutY(154);
-        door.setStrokeWidth(3);
-
-        key.setArcWidth(10);
-        key.setArcHeight(10);
-        key.setLayoutX(505);
-        key.setLayoutY(241);
-
-        keyLabel.setLayoutX(key.getLayoutX() - 8);
-        keyLabel.setLayoutY(key.getLayoutY() - 22);
-        keyLabel.setTextFill(Color.web("#fde68a"));
-        keyLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
-        keyLabel.setMouseTransparent(true);
-
-        root.getChildren().addAll(door, key, keyLabel);
+        door.setPosition(config.getWorldWidth() - 165, 154);
+        key.setPosition(505, 241);
+        root.getChildren().addAll(door.getNode(), key.getNode());
     }
 
     private void buildEnergyBar() {
@@ -288,11 +364,25 @@ public final class Level13 extends BaseLevel {
         }
 
         handleWorldSwitch();
+        updateMovePlatforms(deltaSeconds);
+
+        if (activeMovePlatform != null) {
+            player.moveBy(activeMovePlatform.getDeltaX(), activeMovePlatform.getDeltaY());
+        }
+
+        if (checkTrapCollision()) {
+            return;
+        }
+
         solidPreviousX = player.getX();
         player.handleInput(activeKeys, config.getControlConfig(), MOVE_SPEED, JUMP_SPEED);
         player.applyPhysics(deltaSeconds, GRAVITY);
         resolveSolidCollisions();
+        resolveMovePlatformCollisions();
         clampSolidPlayer();
+        if (checkTrapCollision()) {
+            return;
+        }
         updateEnergy(deltaSeconds);
         checkKey();
         updateView();
@@ -337,12 +427,10 @@ public final class Level13 extends BaseLevel {
     private void checkKey() {
         boolean keyVisible = darkWorld && !hasKey;
         key.setVisible(keyVisible);
-        keyLabel.setVisible(keyVisible);
 
-        if (!hasKey && darkWorld && player.getBounds().intersects(key.getBoundsInParent())) {
+        if (!hasKey && keyVisible && player.getBounds().intersects(key.getBounds())) {
             hasKey = true;
-            key.setVisible(false);
-            keyLabel.setVisible(false);
+            key.setCollected(true);
         }
     }
 
@@ -362,12 +450,12 @@ public final class Level13 extends BaseLevel {
             block.getNode().setOpacity(darkWorld ? 0.9 : 1.0);
         }
 
-        door.setFill(hasKey ? Color.web("#84cc16") : Color.web("#7c3aed"));
-        door.setStroke(darkWorld ? Color.web("#c4b5fd") : Color.web("#ede9fe"));
-        door.setOpacity(darkWorld ? 0.28 : 1.0);
+        door.refreshStyle(hasKey, darkWorld);
+        door.setPosition(config.getWorldWidth() - 165, 154);
 
-        key.setFill(Color.web("#facc15"));
-        key.setStroke(Color.web("#fef08a"));
+        key.refreshStyle();
+        key.setPosition(505, 241);
+        key.setVisible(darkWorld && !hasKey);
 
         double energyHeight = 50 * (energy / ENERGY_MAX);
         double barX = player.getX() + player.getWidth() + 8;
@@ -385,7 +473,7 @@ public final class Level13 extends BaseLevel {
             return;
         }
 
-        if (player.getBounds().intersects(door.getBoundsInParent())) {
+        if (player.getBounds().intersects(door.getBounds())) {
             finished = true;
             onGoalReached();
         }
