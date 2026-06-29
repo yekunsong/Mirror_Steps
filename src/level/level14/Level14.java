@@ -63,9 +63,9 @@ public final class Level14 extends BaseLevel {
 
     private static final Color PLATFORM_COLOR = Color.web("#38bdf8");
     private static final Color TRAP_COLOR = Color.web("#ef4444");
-    private static final String SOLID_BLOCK_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Platforms\\gold.png";
-    private static final String PLATFORM_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Platforms\\blue.png";
-    private static final String TRAP_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Platforms\\red.png";
+    private static final String SOLID_BLOCK_IMAGE = "Pictures/Platforms/gold.png";
+    private static final String PLATFORM_IMAGE = "Pictures/Platforms/blue.png";
+    private static final String TRAP_IMAGE = "Pictures/Platforms/red.png";
 
     private final Rectangle energyTrack = new Rectangle();
     private final Rectangle energyBar = new Rectangle();
