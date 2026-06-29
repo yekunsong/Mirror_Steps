@@ -163,6 +163,8 @@ public final class Level14 extends BaseLevel {
         addSolidBlock(0, 264, 80, 24, SOLID_BLOCK_IMAGE);
         addSolidBlock(0, 264, 80, 24, SOLID_BLOCK_IMAGE);
         addSolidBlock(0, 264, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(188, 264, 80, 24, SOLID_BLOCK_IMAGE);
+        addSolidBlock(268, 264, 80, 24, SOLID_BLOCK_IMAGE);
         
         addSolidBlock(0, 480, 120, 24, SOLID_BLOCK_IMAGE);
         addSolidBlock(100, 456, 120, 24, SOLID_BLOCK_IMAGE);
