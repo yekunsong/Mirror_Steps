@@ -33,8 +33,8 @@ import javafx.scene.paint.Color;
  */
 public final class Player extends GameObject {
 
-    private static final String FACING_RIGHT_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Character\\facing_right.png";
-    private static final String FACING_LEFT_IMAGE = "D:\\Study\\CST_sem6\\JAVA\\Projects\\Pictures\\Character\\facing_left.png";
+    private static final String FACING_RIGHT_IMAGE = "Pictures/Character/facing_right.png";
+    private static final String FACING_LEFT_IMAGE = "Pictures/Character/facing_left.png";
 
     private final double spawnX;
     private final double spawnY;
