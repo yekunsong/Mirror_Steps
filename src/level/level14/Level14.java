@@ -64,6 +64,7 @@ public final class Level14 extends BaseLevel {
     private static final Color PLATFORM_COLOR = Color.web("#38bdf8");
     private static final Color TRAP_COLOR = Color.web("#ef4444");
     private static final String SOLID_BLOCK_IMAGE = "Pictures/Platforms/gold.png";
+    private static final String SOLID_BLOCKV_IMAGE = "Pictures/Platforms/goldV.png";
     private static final String PLATFORM_IMAGE = "Pictures/Platforms/blue.png";
     private static final String TRAP_IMAGE = "Pictures/Platforms/red.png";
 
@@ -175,7 +176,8 @@ public final class Level14 extends BaseLevel {
         addSolidBlock(160, 0, 80, 24, SOLID_BLOCK_IMAGE);
         addSolidBlock(240, 0, 80, 24, SOLID_BLOCK_IMAGE);
         
-        addSolidBlock(300, 0, 20, 148, SOLID_BLOCK_IMAGE);
+        addSolidBlock(300, 0, 20, 74, SOLID_BLOCKV_IMAGE);
+        addSolidBlock(300, 74, 20, 74, SOLID_BLOCKV_IMAGE);
         addSolidBlock(140, 124, 80, 24, SOLID_BLOCK_IMAGE);
         addSolidBlock(220, 124, 80, 24, SOLID_BLOCK_IMAGE);
         
@@ -195,10 +197,12 @@ public final class Level14 extends BaseLevel {
         addSolidBlock(1284, 288, 88, 24, SOLID_BLOCK_IMAGE);
         addSolidBlock(1072, 288, 88, 24, SOLID_BLOCK_IMAGE);
         
-        addSolidBlock(1020, 160, 80, 128, SOLID_BLOCK_IMAGE);
+        addSolidBlock(1020, 160, 40, 128, SOLID_BLOCKV_IMAGE);
+        addSolidBlock(1060, 160, 40, 128, SOLID_BLOCKV_IMAGE);
         
         addSolidBlock(1100, 200, 60, 24, SOLID_BLOCK_IMAGE);
-        addSolidBlock(860, 580, 60, 120, SOLID_BLOCK_IMAGE);
+        addSolidBlock(860, 580, 30, 120, SOLID_BLOCKV_IMAGE);
+        addSolidBlock(890, 580, 30, 120, SOLID_BLOCKV_IMAGE);
         addSolidBlock(1160, 624, 120, 24, SOLID_BLOCK_IMAGE);
         addSolidBlock(860, 408, 80, 24, SOLID_BLOCK_IMAGE);
         addSolidBlock(920, 456, 80, 24, SOLID_BLOCK_IMAGE);
@@ -227,7 +231,9 @@ public final class Level14 extends BaseLevel {
         Trap leftTrap = new Trap(80, 264, 108, 24, TRAP_COLOR, TRAP_IMAGE);
         Trap leftMidTrap = new Trap(100, 456, 100, 24, TRAP_COLOR, TRAP_IMAGE);
         Trap bottomTrap = new Trap(240, 660, 320, 60, TRAP_COLOR, TRAP_IMAGE);
-        Trap rightBottomTrap = new Trap(744, 690, 186, 24, TRAP_COLOR, TRAP_IMAGE);
+        Trap rightBottomLeftTrap = new Trap(744, 690, 62, 24, TRAP_COLOR, TRAP_IMAGE);
+        Trap rightBottomMiddleTrap = new Trap(806, 690, 62, 24, TRAP_COLOR, TRAP_IMAGE);
+        Trap rightBottomRightTrap = new Trap(868, 690, 62, 24, TRAP_COLOR, TRAP_IMAGE);
         Trap centerTrap = new Trap(560, 504, 200, 24, TRAP_COLOR, TRAP_IMAGE);
         Trap upperTrap = new Trap(1020, 136, 80, 24, TRAP_COLOR, TRAP_IMAGE);
         Trap attachedTrap = new Trap(rightPitPlatform.getX(), rightPitPlatform.getY(), 102, 24, TRAP_COLOR, TRAP_IMAGE);
@@ -235,7 +241,9 @@ public final class Level14 extends BaseLevel {
         traps.add(leftTrap);
         traps.add(leftMidTrap);
         traps.add(bottomTrap);
-        traps.add(rightBottomTrap);
+        traps.add(rightBottomLeftTrap);
+        traps.add(rightBottomMiddleTrap);
+        traps.add(rightBottomRightTrap);
         traps.add(centerTrap);
         traps.add(upperTrap);
         traps.add(attachedTrap);
