@@ -16,17 +16,26 @@ public final class Door extends GameObject {
         super(x, y, width, height, LOCKED_FILL);
         getView().setArcWidth(14);
         getView().setArcHeight(14);
-        getView().setStrokeWidth(3);
+        getView().setStroke(null);
     }
 
     public Door(double x, double y, double width, double height, String imagePath) {
         this(x, y, width, height);
         setBackgroundImage(imagePath);
     }
+
+    public void setSize(double width, double height) {
+        getView().setWidth(width);
+        getView().setHeight(height);
+    }
+
+    public void setImage(String imagePath) {
+        setBackgroundImage(imagePath);
+    }
     
     public void refreshStyle(boolean unlocked, boolean darkWorld) {
         setFill(unlocked ? UNLOCKED_FILL : LOCKED_FILL);
-        getView().setStroke(darkWorld ? DARK_STROKE : LIGHT_STROKE);
+        getView().setStroke(null);
         getView().setOpacity(darkWorld ? 0.35 : 1.0);
     }
 }

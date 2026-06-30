@@ -101,7 +101,7 @@ public abstract class GameObject {
             return;
         }
 
-        view.setFill(new ImagePattern(image, 0, 0, width, height, false));
+        view.setFill(new ImagePattern(image, 0, 0, view.getWidth(), view.getHeight(), false));
     }
 
     protected Rectangle getView() {
