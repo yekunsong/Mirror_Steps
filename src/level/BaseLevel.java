@@ -19,13 +19,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.image.Image;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
 
 public abstract class BaseLevel {
 
@@ -55,7 +58,7 @@ public abstract class BaseLevel {
 
     public Scene createScene() {
         root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        root.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+        //root.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
         createPlayer();
         buildLevel();
@@ -84,6 +87,29 @@ public abstract class BaseLevel {
 
     protected String getNextButtonText() {
         return "Next";
+    }
+    
+    protected void setBackgroundImage(String imagePath) {
+        try {
+            Image image = new Image(new java.io.File(imagePath).toURI().toString());
+
+            BackgroundImage backgroundImage = new BackgroundImage(
+                image,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.CENTER,
+                new BackgroundSize(
+                    1, 1,
+                    true, true,
+                    false, false
+                )
+            );
+
+            root.setBackground(new Background(backgroundImage));
+        } catch (Exception e) {
+            System.err.println("Failed to load background image: " + imagePath);
+            System.err.println("Reason: " + e.getMessage());
+        }
     }
 
     protected void addBlock(double x, double y, double width, double height) {

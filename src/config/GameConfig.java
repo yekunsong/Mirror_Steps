@@ -34,7 +34,7 @@ public final class GameConfig {
     private final String title;
     private final double worldWidth;
     private final double worldHeight;
-    private final double playerWidth = 36;
+    private final double playerWidth = 26;
     private final double playerHeight = 48;
     private final double moveSpeed = 150;
     private final double jumpVelocity = -600;
