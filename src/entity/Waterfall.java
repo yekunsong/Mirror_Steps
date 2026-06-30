@@ -63,40 +63,67 @@ public final class Waterfall extends GameObject {
     private void buildCascade() {
         streams.clear();
         flows.clear();
-        fall(getX(), getY(), 0);
-    }
 
-    private void fall(double centerX, double topY, int depth) {
-        if (depth > MAX_DEPTH || streams.size() + flows.size() > MAX_ZONES) {
-            return;
+        java.util.Map<SolidBlock, java.util.List<Double>> platformHits = new java.util.HashMap<>();
+        java.util.Set<SolidBlock> processed = new java.util.HashSet<>();
+        java.util.List<Drop> queue = new java.util.ArrayList<>();
+        
+        queue.add(new Drop(getX(), getY()));
+        int head = 0;
+
+        while (head < queue.size()) {
+            Drop drop = queue.get(head++);
+            SolidBlock surface = highestSurfaceBelow(drop.x, drop.y);
+
+            double bottomY = surface != null ? surface.getY() : worldHeight + OFFSCREEN_DROP;
+            streams.add(new Zone(drop.x - getWidth() / 2, drop.y, getWidth(), bottomY - drop.y, 0));
+
+            if (surface != null) {
+                platformHits.computeIfAbsent(surface, k -> new java.util.ArrayList<>()).add(drop.x);
+
+                if (processed.add(surface)) {
+                    double left = surface.getX();
+                    double right = surface.getX() + surface.getWidth();
+                    double top = surface.getY();
+
+                    if (left > EPS) {
+                        queue.add(new Drop(left, top));
+                    }
+                    if (right < worldWidth - EPS) {
+                        queue.add(new Drop(right, top));
+                    }
+                }
+            }
         }
 
-        SolidBlock surface = highestSurfaceBelow(centerX, topY);
-        double bottomY = surface != null ? surface.getY() : worldHeight + OFFSCREEN_DROP;
-        streams.add(new Zone(centerX - getWidth() / 2, topY, getWidth(), bottomY - topY, 0));
+        for (java.util.Map.Entry<SolidBlock, java.util.List<Double>> entry : platformHits.entrySet()) {
+            SolidBlock surface = entry.getKey();
+            java.util.List<Double> hits = entry.getValue();
+            java.util.Collections.sort(hits);
 
-        if (surface == null) {
-            return;
-        }
+            double left = surface.getX();
+            double right = surface.getX() + surface.getWidth();
+            double top = surface.getY();
 
-        double left = surface.getX();
-        double right = surface.getX() + surface.getWidth();
-        double top = surface.getY();
+            double firstHit = hits.get(0);
+            if (firstHit > left) {
+                flows.add(new Zone(left, top - FLOW_RISE, firstHit - left, FLOW_HEIGHT, -1));
+            }
 
-        if (centerX > left) {
-            flows.add(new Zone(left, top - FLOW_RISE, centerX - left, FLOW_HEIGHT, -1));
-        }
+            for (int i = 0; i < hits.size() - 1; i++) {
+                double x1 = hits.get(i);
+                double x2 = hits.get(i + 1);
+                if (x1 < x2) {
+                    double mid = (x1 + x2) / 2.0;
+                    flows.add(new Zone(x1, top - FLOW_RISE, mid - x1, FLOW_HEIGHT, 1));
+                    flows.add(new Zone(mid, top - FLOW_RISE, x2 - mid, FLOW_HEIGHT, -1));
+                }
+            }
 
-        if (right > centerX) {
-            flows.add(new Zone(centerX, top - FLOW_RISE, right - centerX, FLOW_HEIGHT, 1));
-        }
-
-        if (left > EPS) {
-            fall(left, top, depth + 1);
-        }
-
-        if (right < worldWidth - EPS) {
-            fall(right, top, depth + 1);
+            double lastHit = hits.get(hits.size() - 1);
+            if (right > lastHit) {
+                flows.add(new Zone(lastHit, top - FLOW_RISE, right - lastHit, FLOW_HEIGHT, 1));
+            }
         }
     }
 
@@ -163,6 +190,15 @@ public final class Waterfall extends GameObject {
     }
 
     //////// ZONE ////////
+
+    private static final class Drop {
+        final double x;
+        final double y;
+        Drop(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
 
     private static final class Zone {
 
