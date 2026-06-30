@@ -2,44 +2,88 @@ package level.level9;
 
 import config.GameConfig;
 import core.AppRouter;
+import entity.Player;
+import entity.Waterfall;
+import javafx.animation.AnimationTimer;
+import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import level.BaseLevel;
 
 /*
- * Concrete scene implementation for Level 3.
+ * Level 9 — Waterfalls.
  *
- * Architectural role:
- * - This class implements the final stage in the simplified three-level structure.
- * - It follows the same pattern as Level1 and Level2 while changing the final
- *   transition behavior to return to the menu.
- *
- * Responsibilities:
- * - define the Level 3 layout
- * - maintain player interaction and collision logic
- * - provide the final completion route back to the menu
- *
- * Extension guidance:
- * - A future revision can replace the return-to-menu behavior with a dedicated ending
- *   scene if required.
+ * The water itself is simulated by the shared entity.Waterfall mechanic: this level
+ * only places the solid platforms and a single emitter at the top, and the cascade
+ * is derived from the geometry.
  */
 public final class Level9 extends BaseLevel {
+
+    //////// CONSTANTS ////////
+
+    private static final double EMITTER_X = 580.0;
+
+    //////// FIELDS ////////
+
+    private AnimationTimer timer;
+    private VBox pauseMenu;
+    private StackPane pauseLayer;
+    private boolean paused;
+    private long lastFrame = -1;
+
+    private Waterfall waterfall;
+
+    private double pitLeft;
+    private double pitRight;
+
+    //////// CONSTRUCTOR ////////
 
     public Level9(GameConfig config, AppRouter router) {
         super(config, router);
     }
 
+    //////// SCENE CREATION ////////
+
+    @Override
+    public Scene createScene() {
+        root.getChildren().clear();
+        blocks.clear();
+        movePlatforms.clear();
+        solidBlocks.clear();
+        traps.clear();
+        activeKeys.clear();
+
+        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        root.setBackground(
+                new Background(new BackgroundFill(Color.web("#0F172A"), CornerRadii.EMPTY, Insets.EMPTY)));
+        paused = false;
+
+        buildLevel();
+
+        createPauseLayer();
+
+        StackPane container = new StackPane(root, pauseLayer);
+        Scene scene = new Scene(container, config.getWorldWidth(), config.getWorldHeight());
+        installInput(scene);
+        startLoop();
+        return scene;
+    }
+
+    //////// ABSTRACT OVERRIDES ////////
+
     @Override
     protected String getLevelTitle() {
         return "Level 9";
-    }
-
-    @Override
-    protected void buildLevel() {
-        addBlock(0, config.getWorldHeight() - 40, 220, 40);
-        addBlock(300, config.getWorldHeight() - 40, 240, 40);
-        addBlock(620, config.getWorldHeight() - 40, config.getWorldWidth() - 620, 40);
-        addBlock(180, 360, 150, 24);
-        addBlock(520, 280, 160, 24);
-        setGoal(config.getWorldWidth() - 90, 208);
     }
 
     @Override
@@ -52,4 +96,196 @@ public final class Level9 extends BaseLevel {
         return 10;
     }
 
+    //////// LEVEL LAYOUT ////////
+
+    @Override
+    protected void buildLevel() {
+        // Spawn floor (lower left) and right floor (bottom right).
+        // The bottomless pit is the wide gap between them.
+        addSolidBlock(0, 660, 300, 60);
+        addSolidBlock(840, 660, config.getWorldWidth() - 840, 60);
+
+        // Platform 4 (Bottom Left)
+        addSolidBlock(280, 520, 370, 24);
+
+        // Platform 3 (Middle Right)
+        addSolidBlock(700, 380, 260, 24);
+
+        // Platform 2 (Middle Left)
+        addSolidBlock(500, 240, 250, 24);
+
+        createLevelPlayer(70, 660 - config.getPlayerHeight());
+
+        // Goal floating at top right, reachable only by jumping from Platform 1
+        setGoal(730, 100 - 72);
+
+        buildWaterfall();
+    }
+
+    private void buildWaterfall() {
+        waterfall = new Waterfall(EMITTER_X, 0, Waterfall.STREAM_WIDTH, config.getWorldWidth(), config.getWorldHeight(),
+                solidBlocks);
+        root.getChildren().add(waterfall.getNode());
+    }
+
+    private void createLevelPlayer(double x, double y) {
+        player = new Player(x, y, config.getPlayerWidth(), config.getPlayerHeight(), config.getPlayerColor());
+        root.getChildren().add(player.getNode());
+        solidPreviousX = player.getX();
+    }
+
+    //////// UPDATE LOOP ////////
+
+    private void update(double deltaSeconds) {
+        if (paused) {
+            return;
+        }
+
+        solidPreviousX = player.getX();
+
+        boolean inStream = waterfall.isInStream(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+        if (inStream) {
+            activeKeys.remove(KeyCode.W);
+            activeKeys.remove(KeyCode.UP);
+            activeKeys.remove(KeyCode.SPACE);
+        }
+
+        double moveSpeed = inStream ? config.getMoveSpeed() * 0.5 : config.getMoveSpeed();
+        player.handleInput(activeKeys, config.getControlConfig(), moveSpeed, config.getJumpVelocity());
+        player.applyPhysics(deltaSeconds, config.getGravity());
+
+        double push = waterfall.horizontalPush(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+        if (push != 0) {
+            player.moveBy(push * config.getMoveSpeed() * deltaSeconds, 0);
+        }
+
+        resolveSolidCollisions();
+        clampSolidPlayer();
+        checkGoalManual();
+    }
+
+    private void checkGoalManual() {
+        if (goal == null) {
+            return;
+        }
+
+        Bounds goalBounds = goal.getBoundsInParent();
+        if (player.getBounds().intersects(goalBounds)) {
+            onGoalReached();
+        }
+    }
+
+    //////// DEATH / RESPAWN ////////
+
+    @Override
+    protected void onSolidPlayerOutOfWorld() {
+        player.resetToSpawn();
+        solidPreviousX = player.getX();
+    }
+
+    //////// ANIMATION TIMER ////////
+
+    private void startLoop() {
+        timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (lastFrame < 0) {
+                    lastFrame = now;
+                    return;
+                }
+
+                double deltaSeconds = (now - lastFrame) / 1_000_000_000.0;
+                lastFrame = now;
+                update(deltaSeconds);
+            }
+        };
+        timer.start();
+    }
+
+    private void stopLoop() {
+        if (timer != null) {
+            timer.stop();
+        }
+    }
+
+    //////// PAUSE / NAVIGATION ////////
+
+    @Override
+    protected void switchToLevel(int level) {
+        stopLoop();
+        super.switchToLevel(level);
+    }
+
+    @Override
+    protected void switchToMenu() {
+        stopLoop();
+        super.switchToMenu();
+    }
+
+    private void createPauseLayer() {
+        Label title = new Label(getLevelTitle());
+        title.getStyleClass().add("pause-title");
+
+        Button resumeButton = new Button("Resume");
+        resumeButton.getStyleClass().add("secondary-button");
+        resumeButton.setOnAction(event -> togglePause(false));
+
+        Button menuButton = new Button("Menu");
+        menuButton.getStyleClass().add("secondary-button");
+        menuButton.setOnAction(event -> switchToMenu());
+
+        Button previousButton = new Button("Prev");
+        previousButton.getStyleClass().add("secondary-button");
+        previousButton.setDisable(getPreviousLevelId() == 0);
+        previousButton.setOnAction(event -> switchToLevel(getPreviousLevelId()));
+
+        Button nextButton = new Button("Next");
+        nextButton.getStyleClass().add("primary-button");
+        nextButton.setDisable(getNextLevelId() == 0);
+        nextButton.setOnAction(event -> onGoalReached());
+
+        pauseMenu = new VBox(14, title, resumeButton, menuButton, previousButton, nextButton);
+        pauseMenu.setAlignment(Pos.CENTER);
+        pauseMenu.setPadding(new Insets(28));
+        pauseMenu.setMaxWidth(260);
+        pauseMenu.getStyleClass().add("pause-panel");
+        pauseMenu.setVisible(false);
+        pauseMenu.setManaged(false);
+
+        pauseLayer = new StackPane(pauseMenu);
+        pauseLayer.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        pauseLayer.setMinSize(config.getWorldWidth(), config.getWorldHeight());
+        pauseLayer.setVisible(false);
+        pauseLayer.setManaged(false);
+        pauseLayer.getStyleClass().add("overlay-backdrop");
+    }
+
+    private void installInput(Scene scene) {
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                togglePause(!paused);
+                return;
+            }
+
+            if (!paused) {
+                activeKeys.add(event.getCode());
+            }
+        });
+
+        scene.setOnKeyReleased(event -> activeKeys.remove(event.getCode()));
+    }
+
+    private void togglePause(boolean newState) {
+        paused = newState;
+        pauseLayer.setVisible(newState);
+        pauseLayer.setManaged(newState);
+        pauseMenu.setVisible(newState);
+        pauseMenu.setManaged(newState);
+
+        if (newState) {
+            activeKeys.clear();
+        } else {
+            lastFrame = -1;
+        }
+    }
 }
