@@ -11,6 +11,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -18,6 +19,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 import level.BaseLevel;
 
 /*
@@ -33,6 +35,11 @@ public final class Level9 extends BaseLevel {
 
     private static final double EMITTER_X = 580.0;
 
+    private static final String BACKGROUND_IMAGE = "Pictures/Backgrounds/jungle_background_with_flowers.png";
+    private static final String PLATFORM_IMAGE = "Pictures/Platforms/green.png";
+    private static final String GOAL_IMAGE = "Pictures/Portal/door2.png";
+    private static final String KEY_IMAGE = "Pictures/Key/key1.png";
+
     //////// FIELDS ////////
 
     private AnimationTimer timer;
@@ -42,6 +49,8 @@ public final class Level9 extends BaseLevel {
     private long lastFrame = -1;
 
     private Waterfall waterfall;
+    private entity.Key levelKey;
+    private boolean keyCollected = false;
 
     private double pitLeft;
     private double pitRight;
@@ -64,8 +73,6 @@ public final class Level9 extends BaseLevel {
         activeKeys.clear();
 
         root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        root.setBackground(
-                new Background(new BackgroundFill(Color.web("#0F172A"), CornerRadii.EMPTY, Insets.EMPTY)));
         paused = false;
 
         buildLevel();
@@ -100,26 +107,49 @@ public final class Level9 extends BaseLevel {
 
     @Override
     protected void buildLevel() {
+        setBackgroundImage(BACKGROUND_IMAGE);
+
         // Spawn floor (lower left) and right floor (bottom right).
         // The bottomless pit is the wide gap between them.
-        addSolidBlock(0, 660, 300, 60);
-        addSolidBlock(840, 660, config.getWorldWidth() - 840, 60);
+        addSolidBlock(0, 660, 300, 60, PLATFORM_IMAGE);
+        addSolidBlock(840, 660, config.getWorldWidth() - 840, 60, PLATFORM_IMAGE);
 
         // Platform 4 (Bottom Left)
-        addSolidBlock(280, 520, 370, 24);
+        addSolidBlock(280, 520, 470, 24, PLATFORM_IMAGE);
 
         // Platform 3 (Middle Right)
-        addSolidBlock(700, 380, 260, 24);
+        addSolidBlock(700, 360, 260, 24, PLATFORM_IMAGE);
 
         // Platform 2 (Middle Left)
-        addSolidBlock(500, 240, 250, 24);
+        addSolidBlock(500, 210, 250, 24, PLATFORM_IMAGE);
+
+        // Platform 1 (Top Right)
+        addSolidBlock(530, 70, 100, 24, PLATFORM_IMAGE);
+
+        // Goal Platform (Top Right-most)
+        addSolidBlock(900, 140, 250, 24, PLATFORM_IMAGE);
 
         createLevelPlayer(70, 660 - config.getPlayerHeight());
 
-        // Goal floating at top right, reachable only by jumping from Platform 1
-        setGoal(730, 100 - 72);
+        // Key in bottom right region (above rightmost platform)
+        levelKey = new entity.Key(1200, 600, 32, KEY_IMAGE);
+        root.getChildren().add(levelKey.getNode());
+        keyCollected = false;
+
+        goal = null;
 
         buildWaterfall();
+    }
+
+    private void applyImageToGoal(String imagePath) {
+        if (goal == null || imagePath == null)
+            return;
+        try {
+            Image img = new Image(new java.io.File(imagePath).toURI().toString());
+            goal.setFill(new ImagePattern(img));
+        } catch (Exception e) {
+            System.err.println("Failed to load goal image: " + e.getMessage());
+        }
     }
 
     private void buildWaterfall() {
@@ -161,6 +191,14 @@ public final class Level9 extends BaseLevel {
 
         resolveSolidCollisions();
         clampSolidPlayer();
+
+        if (!keyCollected && player.getBounds().intersects(levelKey.getBounds())) {
+            keyCollected = true;
+            levelKey.setCollected(true);
+            setGoal(1000, 140 - 72);
+            applyImageToGoal(GOAL_IMAGE);
+        }
+
         checkGoalManual();
     }
 
@@ -181,6 +219,13 @@ public final class Level9 extends BaseLevel {
     protected void onSolidPlayerOutOfWorld() {
         player.resetToSpawn();
         solidPreviousX = player.getX();
+
+        keyCollected = false;
+        levelKey.setCollected(false);
+        if (goal != null) {
+            root.getChildren().remove(goal);
+            goal = null;
+        }
     }
 
     //////// ANIMATION TIMER ////////
