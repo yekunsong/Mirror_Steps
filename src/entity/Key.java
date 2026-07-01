@@ -8,13 +8,16 @@ import javafx.scene.paint.Color;
 public final class Key extends GameObject {
 
     private static final Color KEY_FILL = Color.web("#facc15");
-    private static final Color KEY_STROKE = Color.web("#fef08a");
 
-    public Key(double x, double y, double size) {
-        super(x, y, size, size, KEY_FILL);
+    public Key(double x, double y, double width, double height) {
+        super(x, y, width, height, KEY_FILL);
         getView().setArcWidth(10);
         getView().setArcHeight(10);
-        getView().setStroke(KEY_STROKE);
+        getView().setStroke(null);
+    }
+
+    public Key(double x, double y, double size) {
+        this(x, y, size, size);
     }
 
     public void setCollected(boolean collected) {
@@ -22,7 +25,25 @@ public final class Key extends GameObject {
     }
     
     public Key(double x, double y, double size, String imagePath) {
-        this(x, y, size);
+        this(x, y, size, size);
+        setBackgroundImage(imagePath);
+    }
+
+    public Key(double x, double y, double width, double height, String imagePath) {
+        this(x, y, width, height);
+        setBackgroundImage(imagePath);
+    }
+
+    public void setSize(double size) {
+        setSize(size, size);
+    }
+
+    public void setSize(double width, double height) {
+        getView().setWidth(width);
+        getView().setHeight(height);
+    }
+
+    public void setImage(String imagePath) {
         setBackgroundImage(imagePath);
     }
 
@@ -32,6 +53,6 @@ public final class Key extends GameObject {
 
     public void refreshStyle() {
         setFill(KEY_FILL);
-        getView().setStroke(KEY_STROKE);
+        getView().setStroke(null);
     }
 }
