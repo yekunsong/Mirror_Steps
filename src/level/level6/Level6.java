@@ -40,7 +40,7 @@ public final class Level6 extends BaseLevel {
     private static final double LIGHT_EDGE_START = 0.62;
 
     // Tile sizes for textures
-    private static final double TILE_SIZE = 48;
+    private static final double TILE_SIZE = 300;
     private static final double BACKGROUND_TILE_SIZE = 256;
 
     // Key pickup size
@@ -48,7 +48,7 @@ public final class Level6 extends BaseLevel {
 
     // Assets
     private static final String BACKGROUND_IMAGE = "Pictures/Backgrounds/brick_background.png";
-    private static final String FLOOR_TILE_IMAGE = "Pictures/Platforms/blue.png";
+    private static final String FLOOR_TILE_IMAGE = "Pictures/Platforms/grey_wall.png";
     private static final String GOAL_IMAGE = "Pictures/Portal/door2.png";
     private static final String KEY_IMAGE = "Pictures/Key/flashlight2.png"; // Set when image ready
     //private static final String SPAWN_DOOR_IMAGE = "Pictures/Portal/door1.png";
@@ -134,17 +134,17 @@ public final class Level6 extends BaseLevel {
         double topFloorY = 185;
         double topFloorWidth = config.getWorldWidth() * 0.75;
         addSolidBlock(0, topFloorY, topFloorWidth, FLOOR_HEIGHT);
-        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 24);
+        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 169);
 
         // Middle floor
         double middleFloorY = 430;
         double middleFloorStartX = config.getWorldWidth() * 0.20;
         addSolidBlock(middleFloorStartX, middleFloorY, config.getWorldWidth() - middleFloorStartX, FLOOR_HEIGHT);
-        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 24);
+        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 169);
 
         // Bottom floor
         addSolidBlock(0, FLOOR_Y, config.getWorldWidth(), FLOOR_HEIGHT);
-        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 24);
+        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 169);
 
         // Goal on bottom floor
         setGoal(config.getWorldWidth() - 54, FLOOR_Y - 72);
