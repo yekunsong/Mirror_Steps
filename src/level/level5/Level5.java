@@ -34,13 +34,13 @@ public final class Level5 extends BaseLevel {
     private static final double PLAYER_SPAWN_X = 24;
 
     // Tile size for textures
-    private static final double TILE_SIZE = 48;
+    private static final double TILE_SIZE = 300;
 
     // Assets
     private static final String BACKGROUND_IMAGE = "Pictures/Backgrounds/jungle_background_with_flowers.png";
-    private static final String FLOOR_TILE_IMAGE = "Pictures/Platforms/gold.png";
+    private static final String FLOOR_TILE_IMAGE = "Pictures/Platforms/grey_wall.png";
     private static final String BRIDGE_TILE_IMAGE = "Pictures/Platforms/blue.png";
-    private static final String CEILING_TILE_IMAGE = "Pictures/Platforms/gold.png";
+    private static final String CEILING_TILE_IMAGE = "Pictures/Platforms/grey_wall.png";
     private static final String GOAL_IMAGE = "Pictures/Portal/door2.png";
     private static final String SPAWN_DOOR_IMAGE = "Pictures/Portal/door1.png";
 
@@ -130,7 +130,7 @@ public final class Level5 extends BaseLevel {
 
         // Left floor
         addSolidBlock(0, FLOOR_Y, FLOOR_LEFT_WIDTH, config.getWorldHeight() - FLOOR_Y);
-        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 24);
+        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 169);
 
         // Bridge
         bridgeBlock = new Rectangle(FLOOR_GAP_WIDTH, BRIDGE_HEIGHT);
@@ -141,12 +141,12 @@ public final class Level5 extends BaseLevel {
 
         // Right floor 
         addSolidBlock(FLOOR_RIGHT_X, FLOOR_Y, config.getWorldWidth() - FLOOR_RIGHT_X, config.getWorldHeight() - FLOOR_Y);
-        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 24);
+        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), FLOOR_TILE_IMAGE, TILE_SIZE, 169);
 
         // Ceiling 
         ceilingBottomY = Math.max(0, player.getY() - CEILING_CLEARANCE);
         addSolidBlock(0, 0, config.getWorldWidth(), ceilingBottomY);
-        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), CEILING_TILE_IMAGE, TILE_SIZE, 24);
+        tileBlock(solidBlocks.get(solidBlocks.size() - 1).getNode(), CEILING_TILE_IMAGE, TILE_SIZE, 169);
 
         // Visible goal portal on right floor (still functional)
         setGoal(config.getWorldWidth() - 54, FLOOR_Y - 72);

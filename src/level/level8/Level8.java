@@ -42,8 +42,8 @@ public final class Level8 extends BaseLevel {
     private static final double REF_H = 663.0;
 
     // Tile sizes for textures
-    private static final double PLATFORM_TILE_WIDTH = 48;
-    private static final double PLATFORM_TILE_HEIGHT = 24;
+    private static final double PLATFORM_TILE_WIDTH = 300;
+    private static final double PLATFORM_TILE_HEIGHT = 169;
     private static final double BACKGROUND_TILE_SIZE = 256;
 
     // How long the red death fade lasts before respawning
@@ -51,7 +51,7 @@ public final class Level8 extends BaseLevel {
 
     // Assets
     private static final String BACKGROUND_IMAGE = "Pictures/Backgrounds/brick_background.png";
-    private static final String PLATFORM_TILE_IMAGE = "Pictures/Platforms/blue.png";
+    private static final String PLATFORM_TILE_IMAGE = "Pictures/Platforms/grey_wall.png";
     private static final String GOAL_IMAGE = "Pictures/Portal/door2.png";
     private static final String SPAWN_DOOR_IMAGE = "Pictures/Portal/door1.png";
 
