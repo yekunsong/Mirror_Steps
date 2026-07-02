@@ -158,15 +158,15 @@ public final class Level14 extends BaseLevel {
 
     @Override
     protected int getNextLevelId() {
-        return 15;
+        return -1;
     }
 
     @Override
     protected void onGoalReached() {
         stopLoop();
-        switchToLevel(15);
+        switchToMenu();
     }
-
+    
     @Override
     protected void onSolidPlayerOutOfWorld() {
         resetPlayer();
