@@ -21,6 +21,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -29,6 +30,9 @@ import javafx.scene.layout.BackgroundImage;
 import javafx.scene.layout.BackgroundPosition;
 import javafx.scene.layout.BackgroundRepeat;
 import javafx.scene.layout.BackgroundSize;
+import entity.PushableBlock;
+import entity.FloorButton;
+import entity.Portal;
 
 public abstract class BaseLevel {
 
@@ -40,6 +44,10 @@ public abstract class BaseLevel {
     protected final List<SolidBlock> solidBlocks = new ArrayList<>();
     protected final List<Trap> traps = new ArrayList<>();
     protected final Set<KeyCode> activeKeys = new HashSet<>();
+	protected final List<PushableBlock> pushableBlocks = new ArrayList<>();
+    protected final List<Portal> portals = new ArrayList<>();
+    protected final List<FloorButton> floorButtons = new ArrayList<>();
+    
     protected Player player;
     protected Rectangle goal;
     protected VBox pauseMenu;
@@ -180,6 +188,20 @@ public abstract class BaseLevel {
         traps.add(trap);
         root.getChildren().add(trap.getNode());
     }
+    
+    protected FloorButton addFloorButton(double x, double y, double width, double height) {
+        FloorButton button = new FloorButton(x, y, width, height);
+        floorButtons.add(button);
+        root.getChildren().add(button.getNode());
+        return button;
+    }
+    
+    protected FloorButton addFloorButton(double x, double y, double width, double height, String imagePath) {
+        FloorButton button = new FloorButton(x, y, width, height, imagePath);
+        floorButtons.add(button);
+        root.getChildren().add(button.getNode());
+        return button;
+    }
 
     protected void setGoal(double x, double y) {
         goal = new Rectangle(36, 72, config.getGoalColor());
@@ -207,7 +229,6 @@ public abstract class BaseLevel {
     }
 
     protected void resolveSolidCollisions() {
-        player.setOnGround(false);
 
         for (SolidBlock block : solidBlocks) {
             if (!player.getBounds().intersects(block.getBounds())) {
@@ -285,9 +306,17 @@ public abstract class BaseLevel {
         player.resetToSpawn();
         solidPreviousX = player.getX();
     }
+   
+    protected double getSpawnX() {
+        return 60;
+    }
+
+    protected double getSpawnY() {
+        return 420;
+    }
 
     private void createPlayer() {
-        player = new Player(60, 420, config.getPlayerWidth(), config.getPlayerHeight(), config.getPlayerColor());
+        player = new Player(getSpawnX(), getSpawnY(), config.getPlayerWidth(), config.getPlayerHeight(), config.getPlayerColor());
         root.getChildren().add(player.getNode());
     }
 
@@ -376,16 +405,23 @@ public abstract class BaseLevel {
         if (activeMovePlatform != null) {
             player.moveBy(activeMovePlatform.getDeltaX(), activeMovePlatform.getDeltaY());
         }
+        solidPreviousX = player.getX();
 
         player.handleInput(activeKeys, config.getControlConfig(), config.getMoveSpeed(), config.getJumpVelocity());
         player.applyPhysics(deltaSeconds, config.getGravity());
+        player.setOnGround(false);   
+        
         resolveCollisions();
+        resolveSolidCollisions();
         clampPlayer();
+        updatePushableBlocks(deltaSeconds);
+        updateFloorButtons();
+        updatePortals(deltaSeconds);
+        onAfterUpdate(deltaSeconds);
         checkGoal();
     }
 
     private void resolveCollisions() {
-        player.setOnGround(false);
         activeMovePlatform = null;
 
         for (Block block : blocks) {
@@ -514,4 +550,277 @@ public abstract class BaseLevel {
             timer.stop();
         }
     }
+    
+    
+    /*
+     * Each level overrides this to provide its own background image path.
+     * Returning null means the level keeps the plain white background.
+     */
+    protected String getBackgroundImagePath() {
+        return null;
+    }   
+    
+    protected void addPushableBlock(double x, double y, double width, double height, Color color) {
+        PushableBlock block = new PushableBlock(x, y, width, height, color);
+        pushableBlocks.add(block);
+        root.getChildren().add(block.getNode());
+    }
+
+    // ADD THIS NEW METHOD:
+    protected void addPushableBlock(double x, double y, double width, double height, Color color, String imagePath) {
+        PushableBlock block = new PushableBlock(x, y, width, height, color, imagePath);
+        pushableBlocks.add(block);
+        root.getChildren().add(block.getNode());
+    }
+    
+    private void updatePushableBlocks(double deltaSeconds) {
+        for (PushableBlock pb : pushableBlocks) {
+
+            // 1. Player interaction
+            if (player.getBounds().intersects(pb.getBounds())) {
+                double prevPlayerBottom = player.getPreviousY() + player.getHeight();
+                boolean isLandingOnTop = player.getVelocityY() >= 0 && prevPlayerBottom <= pb.getY() + 8;
+
+                if (isLandingOnTop) {
+                    player.landOn(pb.getY());
+                } else {
+                    double playerCenter = player.getX() + player.getWidth() / 2.0;
+                    double blockCenter = pb.getX() + pb.getWidth() / 2.0;
+                    double pushSpeed = config.getMoveSpeed() * 0.6;
+
+                    if (playerCenter < blockCenter) {
+                        pb.setVelocityX(pushSpeed);
+                        player.setPosition(pb.getX() - player.getWidth(), player.getY());
+                    } else {
+                        pb.setVelocityX(-pushSpeed);
+                        player.setPosition(pb.getX() + pb.getWidth(), player.getY());
+                    }
+                }
+            }
+
+            // 2. Apply gravity + horizontal movement
+            pb.applyPhysics(deltaSeconds, config.getGravity());
+
+            // 3. Resolve block landing on normal (one-way) platforms
+            pb.setOnGround(false);
+            for (Block block : blocks) {
+                if (pb.getBounds().intersects(block.getBounds())) {
+                    if (pb.getVelocityY() >= 0 && pb.getPreviousY() + pb.getHeight() <= block.getY() + 16) {
+                        pb.landOn(block.getY());
+                    }
+                }
+            }
+
+            // 3b. Resolve block collision with SOLID blocks (full walls/floors)
+            for (SolidBlock solid : solidBlocks) {
+                if (!pb.getBounds().intersects(solid.getBounds())) {
+                    continue;
+                }
+
+                double pbLeft = pb.getX();
+                double pbRight = pb.getX() + pb.getWidth();
+                double pbTop = pb.getY();
+                double pbBottom = pb.getY() + pb.getHeight();
+
+                double solidLeft = solid.getX();
+                double solidRight = solid.getX() + solid.getWidth();
+                double solidTop = solid.getY();
+                double solidBottom = solid.getY() + solid.getHeight();
+
+                double prevTop = pb.getPreviousY();
+                double prevBottom = prevTop + pb.getHeight();
+                double prevLeft = pb.getPreviousX();
+                double prevRight = prevLeft + pb.getWidth();
+
+                // Landing on top of the solid block
+                if (pb.getVelocityY() >= 0 && prevBottom <= solidTop + 16) {
+                    pb.landOn(solidTop);
+                    continue;
+                }
+
+                // Hitting the underside of the solid block
+                if (pb.getVelocityY() < 0 && prevTop >= solidBottom - 16) {
+                    pb.setPosition(pb.getX(), solidBottom);
+                    pb.setVelocityY(0);
+                    continue;
+                }
+
+                // Side collision - approaching from the left
+                if (prevRight <= solidLeft) {
+                    pb.setPosition(solidLeft - pb.getWidth(), pb.getY());
+                    pb.stopHorizontalMovement();
+                    continue;
+                }
+
+                // Side collision - approaching from the right
+                if (prevLeft >= solidRight) {
+                    pb.setPosition(solidRight, pb.getY());
+                    pb.stopHorizontalMovement();
+                    continue;
+                }
+
+                // Fallback: resolve using smallest overlap
+                double overlapLeft = pbRight - solidLeft;
+                double overlapRight = solidRight - pbLeft;
+                double overlapTop = pbBottom - solidTop;
+                double overlapBottom = solidBottom - pbTop;
+                double smallest = Math.min(Math.min(overlapLeft, overlapRight), Math.min(overlapTop, overlapBottom));
+
+                if (smallest == overlapTop) {
+                    pb.landOn(solidTop);
+                } else if (smallest == overlapBottom) {
+                    pb.setPosition(pb.getX(), solidBottom);
+                    pb.setVelocityY(0);
+                } else if (smallest == overlapLeft) {
+                    pb.setPosition(solidLeft - pb.getWidth(), pb.getY());
+                    pb.stopHorizontalMovement();
+                } else {
+                    pb.setPosition(solidRight, pb.getY());
+                    pb.stopHorizontalMovement();
+                }
+            }
+
+            // ============================================================
+            // 3c. NEW: Resolve block landing on MOVING PLATFORMS (lifts)
+            // ============================================================
+            for (MovePlatform platform : movePlatforms) {
+                if (!pb.getBounds().intersects(platform.getBounds())) {
+                    continue;
+                }
+
+                double prevBottom = pb.getPreviousY() + pb.getHeight();
+                double platformTop = platform.getY();
+
+                // Box lands on top of the moving platform
+                if (pb.getVelocityY() >= 0 && prevBottom <= platformTop + 16) {
+                    pb.landOn(platformTop);
+                    continue;
+                }
+
+                // Side collision with moving platform
+                double prevRight = pb.getPreviousX() + pb.getWidth();
+                double prevLeft = pb.getPreviousX();
+                double platformLeft = platform.getX();
+                double platformRight = platform.getX() + platform.getWidth();
+
+                if (prevRight <= platformLeft) {
+                    pb.setPosition(platformLeft - pb.getWidth(), pb.getY());
+                    pb.stopHorizontalMovement();
+                } else if (prevLeft >= platformRight) {
+                    pb.setPosition(platformRight, pb.getY());
+                    pb.stopHorizontalMovement();
+                }
+            }
+
+            // 4. Resolve block-to-block collisions (Stacking & Walls)
+            for (PushableBlock other : pushableBlocks) {
+                if (pb == other) continue;
+
+                if (pb.getBounds().intersects(other.getBounds())) {
+                    double prevBottom = pb.getPreviousY() + pb.getHeight();
+
+                    if (pb.getVelocityY() >= 0 && prevBottom <= other.getY() + 16) {
+                        pb.landOn(other.getY());
+                    } else {
+                        if (pb.getVelocityX() > 0 && pb.getX() < other.getX()) {
+                            pb.setPosition(other.getX() - pb.getWidth(), pb.getY());
+                            pb.stopHorizontalMovement();
+                        } else if (pb.getVelocityX() < 0 && pb.getX() > other.getX()) {
+                            pb.setPosition(other.getX() + other.getWidth(), pb.getY());
+                            pb.stopHorizontalMovement();
+                        }
+                    }
+                }
+            }
+
+            // 5. Keep inside the screen
+            if (pb.getX() < 0) {
+                pb.setPosition(0, pb.getY());
+            }
+            if (pb.getX() + pb.getWidth() > config.getWorldWidth()) {
+                pb.setPosition(config.getWorldWidth() - pb.getWidth(), pb.getY());
+            }
+        }
+    }
+    /*
+     * Checks every floor button and updates its pressed state.
+     * A button is pressed when the player OR any pushable block overlaps it.
+     */
+    private void updateFloorButtons() {
+        for (FloorButton button : floorButtons) {
+            boolean pressed = false;
+
+            if (player.getBounds().intersects(button.getBounds())) {
+                pressed = true;
+            }
+
+            if (!pressed) {
+                for (PushableBlock pb : pushableBlocks) {
+                    if (pb.getBounds().intersects(button.getBounds())) {
+                        pressed = true;
+                        break;
+                    }
+                }
+            }
+
+            button.setPressed(pressed);
+        }
+    }
+    /*
+     * Optional hook called every frame after the standard update logic.
+     * Levels can override this to add custom per-frame behavior such as
+     * triggered platforms, timers, or scripted events.
+     */
+    protected void onAfterUpdate(double deltaSeconds) {
+        // Default: do nothing.
+    }
+    
+    protected Portal addPortal(double x, double y, double width, double height, String imagePath) {
+        Portal portal = new Portal(x, y, width, height, imagePath);
+        portals.add(portal);
+        root.getChildren().add(portal.getNode());
+        return portal;
+    }
+
+    /*
+     * Teleports the player and pushable blocks when they enter a portal.
+     */
+    private void updatePortals(double deltaSeconds) {
+        // Reduce cooldowns
+        for (Portal portal : portals) {
+            portal.tickCooldown(deltaSeconds);
+        }
+
+        for (Portal portal : portals) {
+            Portal exit = portal.getLinkedPortal();
+            if (exit == null || portal.isOnCooldown()) {
+                continue;
+            }
+
+            // Teleport the player
+            if (player.getBounds().intersects(portal.getBounds())) {
+                double newX = exit.getExitX(player.getWidth());
+                double newY = exit.getExitY(player.getHeight());
+                player.setPosition(newX, newY);
+
+                portal.startCooldown();
+                exit.startCooldown();
+                continue;
+            }
+
+            // Teleport pushable blocks
+            for (PushableBlock pb : pushableBlocks) {
+                if (pb.getBounds().intersects(portal.getBounds())) {
+                    double newX = exit.getExitX(pb.getWidth());
+                    double newY = exit.getExitY(pb.getHeight());
+                    pb.setPosition(newX, newY);
+
+                    portal.startCooldown();
+                    exit.startCooldown();
+                    break;
+                }
+            }
+        }
+    }
+
 }
