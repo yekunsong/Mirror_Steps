@@ -4,19 +4,14 @@ import config.GameConfig;
 import core.AppRouter;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.text.Text;
 import javafx.geometry.Insets;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 
-public final class SettingsView {
+public final class LevelsView {
 
     private ImageView makeImageButton(String imagePath, double width, double height, Runnable onClick) {
         Image img = new Image(AppRouter.resourceUri("Pictures/UI/" + imagePath));
@@ -33,56 +28,43 @@ public final class SettingsView {
         return iv;
     }
 
-    public Scene createScene(GameConfig config, AppRouter router, MediaPlayer mediaPlayer) {
-
-        // ── BACKGROUND ────────────────────────────────────────────────────────
+    public Scene createScene(GameConfig config, AppRouter router) {
         Image bgImage = new Image(AppRouter.resourceUri("Pictures/Backgrounds/main_background.png"));
         ImageView bgView = new ImageView(bgImage);
         bgView.setFitWidth(config.getWorldWidth());
         bgView.setFitHeight(config.getWorldHeight());
         bgView.setPreserveRatio(false);
 
-        //CARD
         Image cardImage = new Image(AppRouter.resourceUri("Pictures/UI/menu_map.png"));
         ImageView cardView = new ImageView(cardImage);
         cardView.setPreserveRatio(true);
-        cardView.setFitWidth(530);
+        cardView.setFitWidth(700);
 
-        // TITLE
-        Image titleImage = new Image(AppRouter.resourceUri("Pictures/UI/settings_title.png"));
+        Image titleImage = new Image(AppRouter.resourceUri("Pictures/UI/levels_title.png"));
         ImageView title = new ImageView(titleImage);
         title.setFitWidth(220);
         title.setPreserveRatio(true);
 
-        //VOLUME LABEL
-        Text volumeLabel = new Text("Music Volume");
-        volumeLabel.setFont(Font.font("Arial Black", 25));
-        volumeLabel.setFill(Color.BLACK);
-        //VOLUME SLIDER
-        Slider volumeSlider = new Slider(0, 1, 0.5); // min, max, default
-        volumeSlider.setPrefWidth(150);   // narrower now
-        volumeSlider.setMaxWidth(220);
-        volumeSlider.setShowTickMarks(true);
-        volumeSlider.setShowTickLabels(true);
-        volumeSlider.setMajorTickUnit(0.25);
-        volumeSlider.setStyle("-fx-accent: white;");
-
-        if (mediaPlayer != null) {
-            volumeSlider.setValue(mediaPlayer.getVolume());
-            volumeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-                mediaPlayer.setVolume(newVal.doubleValue());
-            });
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.CENTER);
+        grid.setHgap(14);
+        grid.setVgap(14);
+        for (int i = 1; i <= 14; i++) {
+            int level = i;
+            ImageView btn = makeImageButton("level" + i + ".png", 80, 80, () -> router.showLevel(level));
+            int col = (i - 1) % 4;
+            int row = (i - 1) / 4;
+            grid.add(btn, col, row);
         }
 
-        //RETURN TO MENU BUTTON
-        ImageView menuButton = makeImageButton("return.png", 120, 40, () -> router.showMenu());
-
-        //LAYOUT
-        VBox content = new VBox(20, title, volumeLabel, volumeSlider);
+        VBox content = new VBox(14, title, grid);
         content.setAlignment(Pos.CENTER);
 
         StackPane cardStack = new StackPane(cardView, content);
         cardStack.setAlignment(Pos.CENTER);
+
+        // ── RETURN TO MENU BUTTON (top-left corner) ─────────────────────────────
+        ImageView menuButton = makeImageButton("return.png", 120, 40, () -> router.showMenu());
 
         StackPane root = new StackPane(bgView, cardStack, menuButton);
         root.setAlignment(Pos.CENTER);

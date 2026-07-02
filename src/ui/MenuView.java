@@ -2,13 +2,13 @@ package ui;
 
 import config.GameConfig;
 import core.AppRouter;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
 
 /*
  * Main menu view.
@@ -30,62 +30,57 @@ import javafx.scene.layout.VBox;
  */
 public final class MenuView {
 
-    /*
-     * Builds and returns the menu scene using the shared fixed-size window settings.
-     */
-    public Scene createScene(GameConfig config, AppRouter router) {
-        BorderPane root = new BorderPane();
-        root.setPadding(new Insets(0));
-        root.setMinSize(config.getWorldWidth(), config.getWorldHeight());
-        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        root.setStyle("-fx-background-color: white;");
+    private ImageView makeImageButton(String imagePath, double width, double height, Runnable onClick) {
+        Image img = new Image(AppRouter.resourceUri("Pictures/UI/" + imagePath));
+        ImageView iv = new ImageView(img);
+        iv.setFitWidth(width);
+        iv.setFitHeight(height);
+        iv.setPreserveRatio(true);
+        iv.setStyle("-fx-cursor: hand;");
+        iv.setOnMouseEntered(e  -> { iv.setScaleX(1.08); iv.setScaleY(1.08); });
+        iv.setOnMouseExited(e   -> { iv.setScaleX(1.0);  iv.setScaleY(1.0);  });
+        iv.setOnMousePressed(e  -> { iv.setScaleX(0.96); iv.setScaleY(0.96); });
+        iv.setOnMouseReleased(e -> { iv.setScaleX(1.08); iv.setScaleY(1.08); });
+        iv.setOnMouseClicked(e  -> onClick.run());
+        return iv;
+    }
 
+    public Scene createScene(GameConfig config, AppRouter router) {
+
+        Image bgImage = new Image(AppRouter.resourceUri("Pictures/Backgrounds/main_background.png"));
+        ImageView bgView = new ImageView(bgImage);
+        bgView.setFitWidth(config.getWorldWidth());
+        bgView.setFitHeight(config.getWorldHeight());
+        bgView.setPreserveRatio(false);
+
+        Image cardImage = new Image(AppRouter.resourceUri("Pictures/UI/menu_map2.png"));
+        ImageView cardView = new ImageView(cardImage);
+        cardView.setPreserveRatio(true);   
+        cardView.setFitWidth(530);         
+
+        // ── BUTTONS ───────────────────────────────────────────────────────────
         Label title = new Label("Mirror Steps");
         title.getStyleClass().add("app-title");
 
-        Label subtitle = new Label("Minimal JavaFX platformer");
-        subtitle.getStyleClass().add("app-subtitle");
+        ImageView startButton    = makeImageButton("start_button.png",    220, 60, () -> router.showLevel(1));
+        ImageView level1Button = makeImageButton("levels_button.png", 220, 60, () -> router.showLevels());
+        ImageView settingsButton = makeImageButton("settings_button.png", 220, 60, () -> router.showSettings());
+        ImageView exitButton     = makeImageButton("exit_button.png",     220, 60, () -> router.closeApp());
 
-        Label description = new Label("This version only keeps menu, settings, three levels, one player, and simple blocks.");
-        description.getStyleClass().add("small-label");
-        description.setWrapText(true);
-        description.setMaxWidth(460);
+        // ── BUTTONS ON TOP OF CARD IMAGE ──────────────────────────────────────
+        VBox buttons = new VBox(14, title, startButton, level1Button, settingsButton, exitButton);
+        buttons.setAlignment(Pos.CENTER);
 
-        Button startButton = new Button("Start Game");
-        startButton.getStyleClass().add("primary-button");
-        startButton.setMaxWidth(Double.MAX_VALUE);
-        startButton.setOnAction(event -> router.showLevel(1));
+        // card image behind buttons, both centered together
+        StackPane cardStack = new StackPane(cardView, buttons);
+        cardStack.setAlignment(Pos.CENTER);
 
-        Button level1Button = new Button("Open Level 1");
-        level1Button.getStyleClass().add("secondary-button");
-        level1Button.setMaxWidth(Double.MAX_VALUE);
-        level1Button.setOnAction(event -> router.showLevel(1));
-
-        Button settingsButton = new Button("Settings");
-        settingsButton.getStyleClass().add("secondary-button");
-        settingsButton.setMaxWidth(Double.MAX_VALUE);
-        settingsButton.setOnAction(event -> router.showSettings());
-
-        Button exitButton = new Button("Exit");
-        exitButton.getStyleClass().add("secondary-button");
-        exitButton.setMaxWidth(Double.MAX_VALUE);
-        exitButton.setOnAction(event -> router.closeApp());
-
-        VBox card = new VBox(14, title, subtitle, description, startButton, level1Button, settingsButton, exitButton);
-        card.setAlignment(Pos.CENTER_LEFT);
-        card.setPadding(new Insets(44));
-        card.prefWidthProperty().bind(root.widthProperty().multiply(0.42));
-        card.maxWidthProperty().bind(root.widthProperty().multiply(0.48));
-        card.prefHeightProperty().bind(root.heightProperty().multiply(0.56));
-        card.setFillWidth(true);
-        card.getStyleClass().add("panel-card");
-
-        VBox stageCenter = new VBox(card);
-        stageCenter.setAlignment(Pos.CENTER);
-        stageCenter.setFillWidth(true);
-        stageCenter.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-
-        root.setCenter(stageCenter);
+        // ── FULL LAYOUT ───────────────────────────────────────────────────────
+        // background behind everything, cardStack centered on top
+        StackPane root = new StackPane(bgView, cardStack);
+        root.setAlignment(Pos.CENTER);
+        root.setMinSize(config.getWorldWidth(), config.getWorldHeight());
+        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
 
         return new Scene(root, config.getWorldWidth(), config.getWorldHeight());
     }
