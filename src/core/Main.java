@@ -40,6 +40,7 @@ public final class Main extends Application {
     public void start(Stage stage) {
         GameConfig config = new GameConfig(FIXED_STAGE_WIDTH, FIXED_STAGE_HEIGHT);
         AppRouter router = new AppRouter(stage, config);
+        router.initMusic();
         router.showMenu();
     }
 }
