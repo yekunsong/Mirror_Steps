@@ -19,6 +19,7 @@ public final class MovePlatform extends GameObject {
     private double previousX;
     private double previousY;
     private double velocitySign = 1;
+    private boolean manualControl = false;
 
     public MovePlatform(
             double x,
@@ -53,11 +54,19 @@ public final class MovePlatform extends GameObject {
         this(x, y, width, height, color, direction, minBound, maxBound, speed);
         setBackgroundImage(imagePath);
     }
+    
+    public void setManualControl(boolean manualControl) {
+        this.manualControl = manualControl;
+    }
 
     @Override
     public void update(double deltaSeconds) {
         previousX = getX();
         previousY = getY();
+        
+        if (manualControl) {
+            return;
+        }
 
         double distance = speed * deltaSeconds * velocitySign;
 
@@ -84,6 +93,44 @@ public final class MovePlatform extends GameObject {
         }
         setPosition(getX(), nextY);
     }
+    
+    /*
+     * Moves this platform smoothly toward a specific Y position.
+     * This is used by Level 2 when the floor button is pressed.
+     */
+    public void moveToY(double targetY, double deltaSeconds) {
+        previousX = getX();
+        previousY = getY();
+
+        double currentY = getY();
+        double step = speed * deltaSeconds;
+
+        if (Math.abs(targetY - currentY) <= step) {
+            setPosition(getX(), targetY);
+        } else if (targetY < currentY) {
+            setPosition(getX(), currentY - step);
+        } else {
+            setPosition(getX(), currentY + step);
+        }
+    }
+
+    public void moveToX(double targetX, double deltaSeconds) {
+        previousX = getX();
+        previousY = getY();
+
+        double currentX = getX();
+        double step = speed * deltaSeconds;
+
+        if (Math.abs(targetX - currentX) <= step) {
+            setPosition(targetX, getY());
+        } else if (targetX < currentX) {
+            setPosition(currentX - step, getY());
+        } else {
+            setPosition(currentX + step, getY());
+        }
+    }
+
+
 
     public Direction getDirection() {
         return direction;
