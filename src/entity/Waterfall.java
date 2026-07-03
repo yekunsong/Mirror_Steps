@@ -32,6 +32,7 @@ public final class Waterfall extends GameObject {
 
     //////// FIELDS ////////
 
+    private final List<double[]> sources;
     private final double worldWidth;
     private final double worldHeight;
     private final List<SolidBlock> solids;
@@ -44,7 +45,18 @@ public final class Waterfall extends GameObject {
     //////// CONSTRUCTION ////////
 
     public Waterfall(double x, double y, double width, double worldWidth, double worldHeight, List<SolidBlock> solids) {
-        super(x, y, width, worldHeight - y, Color.TRANSPARENT);
+        this(List.of(new double[] { x, y }), width, worldWidth, worldHeight, solids);
+    }
+
+    /*
+     * Multi-source constructor — seeds every source into the same cascade so that
+     * sources landing on a shared platform converge and meet at their midpoint
+     * instead of each spreading past the other and canceling out over the whole span.
+     */
+    public Waterfall(List<double[]> sources, double width, double worldWidth, double worldHeight,
+            List<SolidBlock> solids) {
+        super(sources.get(0)[0], sources.get(0)[1], width, worldHeight - sources.get(0)[1], Color.TRANSPARENT);
+        this.sources = sources;
         this.worldWidth = worldWidth;
         this.worldHeight = worldHeight;
         this.solids = solids;
@@ -74,7 +86,9 @@ public final class Waterfall extends GameObject {
             }
         };
 
-        enqueue.accept(new Drop(getX(), getY(), null));
+        for (double[] source : sources) {
+            enqueue.accept(new Drop(source[0], source[1], null));
+        }
         int head = 0;
         
         java.util.Map<SolidBlock, java.util.List<Double>> platformHits = new java.util.HashMap<>();
