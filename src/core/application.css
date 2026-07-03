@@ -4,8 +4,8 @@
 }
 
 .app-title {
-    -fx-text-fill: #0f172a;
-    -fx-font-size: 40px;
+    -fx-text-fill: #000000;
+    -fx-font-size: 30px;
     -fx-font-weight: 800;
 }
 
@@ -87,16 +87,37 @@
 }
 
 .pause-panel {
-    -fx-background-color: rgba(255, 255, 255, 0.98);
+    -fx-background-color: transparent;
     -fx-background-radius: 18;
-    -fx-border-radius: 18;
-    -fx-border-color: #dbe4ee;
-    -fx-border-width: 1;
-    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.14), 24, 0.22, 0, 10);
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.28), 30, 0.22, 0, 10);
 }
 
 .pause-title {
-    -fx-text-fill: #0f172a;
-    -fx-font-size: 26px;
+    -fx-text-fill: #000000;
+    -fx-font-size: 28px;
     -fx-font-weight: 800;
+}
+
+.pause-image-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.pause-image-button:hover {
+    -fx-opacity: 0.92;
+}
+
+.pause-image-button:pressed {
+    -fx-opacity: 0.84;
+}
+
+.pause-image-button:disabled {
+    -fx-opacity: 0.45;
 }
