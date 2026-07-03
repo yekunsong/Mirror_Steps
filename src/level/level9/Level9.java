@@ -36,7 +36,7 @@ public final class Level9 extends BaseLevel {
     private static final double EMITTER_X = 580.0;
 
     private static final String BACKGROUND_IMAGE = "Pictures/Backgrounds/jungle_background_with_flowers.png";
-    private static final String PLATFORM_IMAGE = "Pictures/Platforms/green.png";
+    private static final String PLATFORM_IMAGE = "Pictures/Branch/grass_branch.png";
     private static final String GOAL_IMAGE = "Pictures/Portal/door2.png";
     private static final String KEY_IMAGE = "Pictures/Key/key1.png";
 
@@ -115,19 +115,19 @@ public final class Level9 extends BaseLevel {
         addSolidBlock(840, 660, config.getWorldWidth() - 840, 60, PLATFORM_IMAGE);
 
         // Platform 4 (Bottom Left)
-        addSolidBlock(280, 520, 470, 24, PLATFORM_IMAGE);
+        addSolidBlock(280, 520, 470, 40, PLATFORM_IMAGE);
 
         // Platform 3 (Middle Right)
-        addSolidBlock(700, 360, 260, 24, PLATFORM_IMAGE);
+        addSolidBlock(700, 360, 260, 40, PLATFORM_IMAGE);
 
         // Platform 2 (Middle Left)
-        addSolidBlock(500, 210, 250, 24, PLATFORM_IMAGE);
+        addSolidBlock(500, 210, 250, 40, PLATFORM_IMAGE);
 
         // Platform 1 (Top Right)
-        addSolidBlock(530, 70, 100, 24, PLATFORM_IMAGE);
+        addSolidBlock(530, 70, 100, 40, PLATFORM_IMAGE);
 
         // Goal Platform (Top Right-most)
-        addSolidBlock(900, 140, 250, 24, PLATFORM_IMAGE);
+        addSolidBlock(900, 140, 250, 40, PLATFORM_IMAGE);
 
         createLevelPlayer(70, 660 - config.getPlayerHeight());
 
