@@ -11,17 +11,19 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.nio.file.Path;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -35,6 +37,10 @@ import entity.FloorButton;
 import entity.Portal;
 
 public abstract class BaseLevel {
+    private static final Path PROJECT_ROOT = Path.of("Mirror_Steps");
+    private static final double PAUSE_MENU_BACKGROUND_WIDTH = 420;
+    private static final double PAUSE_MENU_BACKGROUND_HEIGHT = 560;
+    private static final double PAUSE_BUTTON_HEIGHT = 56;
 
     protected final GameConfig config;
     protected final AppRouter router;
@@ -99,7 +105,7 @@ public abstract class BaseLevel {
     
     protected void setBackgroundImage(String imagePath) {
         try {
-            Image image = new Image(new java.io.File(imagePath).toURI().toString());
+            Image image = new Image(resolveAssetPath(imagePath).toUri().toString());
 
             BackgroundImage backgroundImage = new BackgroundImage(
                 image,
@@ -325,42 +331,167 @@ public abstract class BaseLevel {
         pauseMenu.setVisible(false);
         pauseMenu.setManaged(false);
 
-        overlay = new StackPane(pauseMenu);
-        overlay.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        overlay.setMinSize(config.getWorldWidth(), config.getWorldHeight());
-        overlay.setVisible(false);
-        overlay.setManaged(false);
-        overlay.getStyleClass().add("overlay-backdrop");
+        overlay = createPauseOverlay(pauseMenu);
     }
 
     private VBox createPauseMenu() {
-        Label title = new Label(getLevelTitle());
-        title.getStyleClass().add("pause-title");
+        return createStandardPauseMenu(
+            () -> togglePause(false),
+            this::switchToMenu,
+            () -> switchToLevel(getPreviousLevelId()),
+            this::onGoalReached,
+            getPreviousLevelId() == 0,
+            getNextLevelId() == 0
+        );
+    }
 
-        Button resumeButton = new Button("Resume");
-        resumeButton.getStyleClass().add("secondary-button");
-        resumeButton.setOnAction(event -> togglePause(false));
+    protected final VBox createStandardPauseMenu(
+        Runnable onResume,
+        Runnable onMenu,
+        Runnable onPrevious,
+        Runnable onNext,
+        boolean disablePrevious,
+        boolean disableNext
+    ) {
+        VBox content = createPauseMenuContent(
+            onResume,
+            onMenu,
+            onPrevious,
+            onNext,
+            disablePrevious,
+            disableNext
+        );
+        ImageView backgroundView = createPauseBackgroundView();
 
-        Button menuButton = new Button("Menu");
-        menuButton.getStyleClass().add("secondary-button");
-        menuButton.setOnAction(event -> switchToMenu());
+        StackPane menuLayout = new StackPane();
+        menuLayout.setAlignment(Pos.CENTER);
+        menuLayout.setPrefSize(PAUSE_MENU_BACKGROUND_WIDTH, PAUSE_MENU_BACKGROUND_HEIGHT);
+        menuLayout.setMinSize(PAUSE_MENU_BACKGROUND_WIDTH, PAUSE_MENU_BACKGROUND_HEIGHT);
+        menuLayout.setMaxSize(PAUSE_MENU_BACKGROUND_WIDTH, PAUSE_MENU_BACKGROUND_HEIGHT);
+        if (backgroundView != null) {
+            menuLayout.getChildren().add(backgroundView);
+        }
+        menuLayout.getChildren().add(content);
 
-        Button previousButton = new Button("Prev");
-        previousButton.getStyleClass().add("secondary-button");
-        previousButton.setDisable(getPreviousLevelId() == 0);
-        previousButton.setOnAction(event -> switchToLevel(getPreviousLevelId()));
-
-        Button nextButton = new Button(getNextButtonText());
-        nextButton.getStyleClass().add("primary-button");
-        nextButton.setDisable(getNextLevelId() == 0);
-        nextButton.setOnAction(event -> onGoalReached());
-
-        VBox menu = new VBox(14, title, resumeButton, menuButton, previousButton, nextButton);
+        VBox menu = new VBox(menuLayout);
         menu.setAlignment(Pos.CENTER);
-        menu.setPadding(new Insets(28));
-        menu.setMaxWidth(260);
+        menu.setFillWidth(false);
         menu.getStyleClass().add("pause-panel");
         return menu;
+    }
+
+    private VBox createPauseMenuContent(
+        Runnable onResume,
+        Runnable onMenu,
+        Runnable onPrevious,
+        Runnable onNext,
+        boolean disablePrevious,
+        boolean disableNext
+    ) {
+        Label title = new Label(getLevelTitle());
+        title.getStyleClass().add("pause-title");
+        title.setTranslateY(-10);
+
+        Button resumeButton = createPauseImageButton("resume.png", "Resume");
+        resumeButton.setOnAction(event -> onResume.run());
+
+        Button menuButton = createPauseImageButton("menu.png", "Menu");
+        menuButton.setOnAction(event -> onMenu.run());
+
+        Button previousButton = createPauseImageButton("previous.png", "Previous");
+        previousButton.setDisable(disablePrevious);
+        previousButton.setOnAction(event -> onPrevious.run());
+
+        Button nextButton = createPauseImageButton("next.png", getNextButtonText());
+        nextButton.setDisable(disableNext);
+        nextButton.setOnAction(event -> onNext.run());
+
+        VBox content = new VBox(12, title, resumeButton, menuButton, previousButton, nextButton);
+        content.setAlignment(Pos.CENTER);
+        content.setPadding(new Insets(34, 28, 34, 28));
+        content.setPrefSize(PAUSE_MENU_BACKGROUND_WIDTH, PAUSE_MENU_BACKGROUND_HEIGHT);
+        content.setMinSize(PAUSE_MENU_BACKGROUND_WIDTH, PAUSE_MENU_BACKGROUND_HEIGHT);
+        content.setMaxSize(PAUSE_MENU_BACKGROUND_WIDTH, PAUSE_MENU_BACKGROUND_HEIGHT);
+        return content;
+    }
+
+    protected final StackPane createPauseOverlay(VBox menu) {
+        StackPane pauseOverlay = new StackPane(menu);
+        pauseOverlay.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        pauseOverlay.setMinSize(config.getWorldWidth(), config.getWorldHeight());
+        pauseOverlay.setVisible(false);
+        pauseOverlay.setManaged(false);
+        pauseOverlay.getStyleClass().add("overlay-backdrop");
+        return pauseOverlay;
+    }
+
+    private Button createPauseImageButton(String fileName, String fallbackText) {
+        Button button = new Button();
+        button.getStyleClass().add("pause-image-button");
+        button.setFocusTraversable(false);
+
+        Image buttonImage = loadPauseImage(fileName);
+        if (buttonImage == null) {
+            button.setText(fallbackText);
+            button.getStyleClass().add("secondary-button");
+            return button;
+        }
+
+        ImageView imageView = new ImageView(buttonImage);
+        imageView.setPreserveRatio(true);
+        imageView.setFitHeight(PAUSE_BUTTON_HEIGHT);
+        button.setGraphic(imageView);
+        button.setMinSize(Region.USE_PREF_SIZE, PAUSE_BUTTON_HEIGHT);
+        button.setPrefSize(Region.USE_COMPUTED_SIZE, PAUSE_BUTTON_HEIGHT);
+        button.setMaxSize(Region.USE_PREF_SIZE, PAUSE_BUTTON_HEIGHT);
+        return button;
+    }
+
+    private ImageView createPauseBackgroundView() {
+        Image backgroundImage = loadPauseImage("pause_background.png");
+        if (backgroundImage == null) {
+            return null;
+        }
+
+        ImageView backgroundView = new ImageView(backgroundImage);
+        backgroundView.setPreserveRatio(false);
+        backgroundView.setFitWidth(PAUSE_MENU_BACKGROUND_WIDTH);
+        backgroundView.setFitHeight(PAUSE_MENU_BACKGROUND_HEIGHT);
+        backgroundView.setMouseTransparent(true);
+        return backgroundView;
+    }
+
+    private Image loadPauseImage(String fileName) {
+        return loadImage(Path.of("Pictures", "Pause", fileName).toString());
+    }
+
+    private Image loadImage(String imagePath) {
+        try {
+            return new Image(resolveAssetPath(imagePath).toUri().toString());
+        } catch (Exception exception) {
+            System.err.println("Failed to load image: " + imagePath);
+            System.err.println("Reason: " + exception.getMessage());
+            return null;
+        }
+    }
+
+    private Path resolveAssetPath(String imagePath) {
+        Path path = Path.of(imagePath);
+        if (path.isAbsolute()) {
+            return path;
+        }
+
+        Path directPath = path.toAbsolutePath();
+        if (directPath.toFile().exists()) {
+            return directPath;
+        }
+
+        Path projectRelativePath = PROJECT_ROOT.resolve(path).toAbsolutePath();
+        if (projectRelativePath.toFile().exists()) {
+            return projectRelativePath;
+        }
+
+        return directPath;
     }
 
     private void installInput(Scene scene) {
