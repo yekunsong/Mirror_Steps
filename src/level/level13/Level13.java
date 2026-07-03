@@ -128,51 +128,30 @@ public final class Level13 extends BaseLevel {
         energyBar.setArcHeight(8);
         energyBar.setMouseTransparent(true);
 
-        Label title = new Label(getLevelTitle());
-        title.getStyleClass().add("pause-title");
-
-        Button resumeButton = new Button("Resume");
-        resumeButton.getStyleClass().add("secondary-button");
-        resumeButton.setOnAction(event -> togglePause(false));
-
-        Button menuButton = new Button("Menu");
-        menuButton.getStyleClass().add("secondary-button");
-        menuButton.setOnAction(event -> {
-            stopLoop();
-            switchToMenu();
-        });
-
-        Button previousButton = new Button("Prev");
-        previousButton.getStyleClass().add("secondary-button");
-        previousButton.setOnAction(event -> {
-            stopLoop();
-            switchToLevel(getPreviousLevelId());
-        });
-
-        Button nextButton = new Button("Next");
-        nextButton.getStyleClass().add("primary-button");
-        nextButton.setOnAction(event -> {
-            stopLoop();
-            onGoalReached();
-        });
-
-        pauseMenu = new VBox(14, title, resumeButton, menuButton, previousButton, nextButton);
-        pauseMenu.setAlignment(Pos.CENTER);
-        pauseMenu.setPadding(new Insets(28));
-        pauseMenu.setMaxWidth(260);
-        pauseMenu.getStyleClass().add("pause-panel");
+        pauseMenu = createStandardPauseMenu(
+            () -> togglePause(false),
+            () -> {
+                stopLoop();
+                switchToMenu();
+            },
+            () -> {
+                stopLoop();
+                switchToLevel(getPreviousLevelId());
+            },
+            () -> {
+                stopLoop();
+                onGoalReached();
+            },
+            getPreviousLevelId() == 0,
+            getNextLevelId() == 0
+        );
         pauseMenu.setVisible(false);
         pauseMenu.setManaged(false);
 
         darkLayer.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
         darkLayer.setMouseTransparent(true);
 
-        pauseLayer = new StackPane(pauseMenu);
-        pauseLayer.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        pauseLayer.setMinSize(config.getWorldWidth(), config.getWorldHeight());
-        pauseLayer.setVisible(false);
-        pauseLayer.setManaged(false);
-        pauseLayer.getStyleClass().add("overlay-backdrop");
+        pauseLayer = createPauseOverlay(pauseMenu);
 
         refreshView();
 

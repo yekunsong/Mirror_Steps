@@ -455,41 +455,18 @@ public final class Level5 extends BaseLevel {
     // ============================================================
 
     private void createPauseLayer() {
-        Label title = new Label(getLevelTitle());
-        title.getStyleClass().add("pause-title");
-
-        Button resumeButton = new Button("Resume");
-        resumeButton.getStyleClass().add("secondary-button");
-        resumeButton.setOnAction(event -> togglePause(false));
-
-        Button menuButton = new Button("Menu");
-        menuButton.getStyleClass().add("secondary-button");
-        menuButton.setOnAction(event -> switchToMenu());
-
-        Button previousButton = new Button("Prev");
-        previousButton.getStyleClass().add("secondary-button");
-        previousButton.setDisable(getPreviousLevelId() == 0);
-        previousButton.setOnAction(event -> switchToLevel(getPreviousLevelId()));
-
-        Button nextButton = new Button("Next");
-        nextButton.getStyleClass().add("primary-button");
-        nextButton.setDisable(getNextLevelId() == 0);
-        nextButton.setOnAction(event -> onGoalReached());
-
-        pauseMenu = new VBox(14, title, resumeButton, menuButton, previousButton, nextButton);
-        pauseMenu.setAlignment(Pos.CENTER);
-        pauseMenu.setPadding(new Insets(28));
-        pauseMenu.setMaxWidth(260);
-        pauseMenu.getStyleClass().add("pause-panel");
+        pauseMenu = createStandardPauseMenu(
+            () -> togglePause(false),
+            this::switchToMenu,
+            () -> switchToLevel(getPreviousLevelId()),
+            this::onGoalReached,
+            getPreviousLevelId() == 0,
+            getNextLevelId() == 0
+        );
         pauseMenu.setVisible(false);
         pauseMenu.setManaged(false);
 
-        pauseLayer = new StackPane(pauseMenu);
-        pauseLayer.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        pauseLayer.setMinSize(config.getWorldWidth(), config.getWorldHeight());
-        pauseLayer.setVisible(false);
-        pauseLayer.setManaged(false);
-        pauseLayer.getStyleClass().add("overlay-backdrop");
+        pauseLayer = createPauseOverlay(pauseMenu);
     }
 
     private void togglePause(boolean newState) {
