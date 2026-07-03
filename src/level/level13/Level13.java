@@ -96,21 +96,121 @@ public final class Level13 extends BaseLevel {
     @Override
     public Scene createScene() {
         resetLevelState();
-        configureSceneRoot();
+        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        setBackgroundImage(BACKGROUND_IMAGE);
 
-        createLevelPlayer();
+        player = new entity.Player(
+            PLAYER_START_X,
+            PLAYER_START_Y,
+            config.getPlayerWidth(),
+            config.getPlayerHeight(),
+            config.getPlayerColor()
+        );
+        root.getChildren().add(player.getNode());
+        solidPreviousX = player.getX();
+
         buildLevel();
-        buildObjects();
-        buildEnergyBar();
-        buildPauseLayer();
-        updateView();
+        key.setSize(KEY_WIDTH, KEY_HEIGHT);
+        door.setPosition(config.getWorldWidth() - 165, DOOR_Y);
+        key.setPosition(KEY_X, KEY_Y);
+        root.getChildren().addAll(door.getNode(), key.getNode(), energyTrack, energyBar);
+
+        energyTrack.setWidth(12);
+        energyTrack.setHeight(54);
+        energyTrack.setArcWidth(10);
+        energyTrack.setArcHeight(10);
+        energyTrack.setFill(Color.rgb(15, 23, 42, 0.75));
+        energyTrack.setStroke(Color.rgb(226, 232, 240, 0.45));
+        energyTrack.setMouseTransparent(true);
+
+        energyBar.setWidth(8);
+        energyBar.setArcWidth(8);
+        energyBar.setArcHeight(8);
+        energyBar.setMouseTransparent(true);
+
+        Label title = new Label(getLevelTitle());
+        title.getStyleClass().add("pause-title");
+
+        Button resumeButton = new Button("Resume");
+        resumeButton.getStyleClass().add("secondary-button");
+        resumeButton.setOnAction(event -> togglePause(false));
+
+        Button menuButton = new Button("Menu");
+        menuButton.getStyleClass().add("secondary-button");
+        menuButton.setOnAction(event -> {
+            stopLoop();
+            switchToMenu();
+        });
+
+        Button previousButton = new Button("Prev");
+        previousButton.getStyleClass().add("secondary-button");
+        previousButton.setOnAction(event -> {
+            stopLoop();
+            switchToLevel(getPreviousLevelId());
+        });
+
+        Button nextButton = new Button("Next");
+        nextButton.getStyleClass().add("primary-button");
+        nextButton.setOnAction(event -> {
+            stopLoop();
+            onGoalReached();
+        });
+
+        pauseMenu = new VBox(14, title, resumeButton, menuButton, previousButton, nextButton);
+        pauseMenu.setAlignment(Pos.CENTER);
+        pauseMenu.setPadding(new Insets(28));
+        pauseMenu.setMaxWidth(260);
+        pauseMenu.getStyleClass().add("pause-panel");
+        pauseMenu.setVisible(false);
+        pauseMenu.setManaged(false);
+
+        darkLayer.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        darkLayer.setMouseTransparent(true);
+
+        pauseLayer = new StackPane(pauseMenu);
+        pauseLayer.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
+        pauseLayer.setMinSize(config.getWorldWidth(), config.getWorldHeight());
+        pauseLayer.setVisible(false);
+        pauseLayer.setManaged(false);
+        pauseLayer.getStyleClass().add("overlay-backdrop");
+
+        refreshView();
 
         StackPane container = new StackPane(root, darkLayer, pauseLayer);
         StackPane.setAlignment(pauseMenu, Pos.CENTER);
 
         Scene scene = new Scene(container, config.getWorldWidth(), config.getWorldHeight());
-        installInput(scene);
-        startLoop();
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                togglePause(!paused);
+                return;
+            }
+
+            if (!paused) {
+                activeKeys.add(event.getCode());
+            }
+        });
+        scene.setOnKeyReleased(event -> {
+            activeKeys.remove(event.getCode());
+            if (event.getCode() == WORLD_SWITCH_KEY) {
+                worldSwitchLocked = false;
+            }
+        });
+
+        timer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (lastFrame < 0) {
+                    lastFrame = now;
+                    return;
+                }
+
+                double deltaSeconds = (now - lastFrame) / 1_000_000_000.0;
+                lastFrame = now;
+                update(deltaSeconds);
+            }
+        };
+        timer.start();
         return scene;
     }
 
@@ -178,132 +278,6 @@ public final class Level13 extends BaseLevel {
         currentPlatform = null;
     }
 
-    private void configureSceneRoot() {
-        root.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        setBackgroundImage(BACKGROUND_IMAGE);
-    }
-
-    private void createLevelPlayer() {
-        player = new entity.Player(
-            PLAYER_START_X,
-            PLAYER_START_Y,
-            config.getPlayerWidth(),
-            config.getPlayerHeight(),
-            config.getPlayerColor()
-        );
-        root.getChildren().add(player.getNode());
-        solidPreviousX = player.getX();
-    }
-
-    private void buildObjects() {
-        key.setSize(KEY_WIDTH, KEY_HEIGHT);
-        door.setPosition(getDoorX(), DOOR_Y);
-        key.setPosition(KEY_X, KEY_Y);
-        root.getChildren().addAll(door.getNode(), key.getNode());
-    }
-
-    private void buildEnergyBar() {
-        energyTrack.setWidth(12);
-        energyTrack.setHeight(54);
-        energyTrack.setArcWidth(10);
-        energyTrack.setArcHeight(10);
-        energyTrack.setFill(Color.rgb(15, 23, 42, 0.75));
-        energyTrack.setStroke(Color.rgb(226, 232, 240, 0.45));
-        energyTrack.setMouseTransparent(true);
-
-        energyBar.setWidth(8);
-        energyBar.setArcWidth(8);
-        energyBar.setArcHeight(8);
-        energyBar.setMouseTransparent(true);
-
-        darkLayer.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        darkLayer.setMouseTransparent(true);
-
-        root.getChildren().addAll(energyTrack, energyBar);
-    }
-
-    private void buildPauseLayer() {
-        Label title = new Label(getLevelTitle());
-        title.getStyleClass().add("pause-title");
-
-        Button resumeButton = new Button("Resume");
-        resumeButton.getStyleClass().add("secondary-button");
-        resumeButton.setOnAction(event -> togglePause(false));
-
-        Button menuButton = new Button("Menu");
-        menuButton.getStyleClass().add("secondary-button");
-        menuButton.setOnAction(event -> {
-            stopLoop();
-            switchToMenu();
-        });
-
-        Button previousButton = new Button("Prev");
-        previousButton.getStyleClass().add("secondary-button");
-        previousButton.setOnAction(event -> {
-            stopLoop();
-            switchToLevel(getPreviousLevelId());
-        });
-
-        Button nextButton = new Button("Next");
-        nextButton.getStyleClass().add("primary-button");
-        nextButton.setOnAction(event -> {
-            stopLoop();
-            onGoalReached();
-        });
-
-        pauseMenu = new VBox(14, title, resumeButton, menuButton, previousButton, nextButton);
-        pauseMenu.setAlignment(Pos.CENTER);
-        pauseMenu.setPadding(new Insets(28));
-        pauseMenu.setMaxWidth(260);
-        pauseMenu.getStyleClass().add("pause-panel");
-        pauseMenu.setVisible(false);
-        pauseMenu.setManaged(false);
-
-        pauseLayer = new StackPane(pauseMenu);
-        pauseLayer.setPrefSize(config.getWorldWidth(), config.getWorldHeight());
-        pauseLayer.setMinSize(config.getWorldWidth(), config.getWorldHeight());
-        pauseLayer.setVisible(false);
-        pauseLayer.setManaged(false);
-        pauseLayer.getStyleClass().add("overlay-backdrop");
-    }
-
-    private void installInput(Scene scene) {
-        scene.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ESCAPE) {
-                togglePause(!paused);
-                return;
-            }
-
-            if (!paused) {
-                activeKeys.add(event.getCode());
-            }
-        });
-
-        scene.setOnKeyReleased(event -> {
-            activeKeys.remove(event.getCode());
-            if (event.getCode() == WORLD_SWITCH_KEY) {
-                worldSwitchLocked = false;
-            }
-        });
-    }
-
-    private void startLoop() {
-        timer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if (lastFrame < 0) {
-                    lastFrame = now;
-                    return;
-                }
-
-                double deltaSeconds = (now - lastFrame) / 1_000_000_000.0;
-                lastFrame = now;
-                update(deltaSeconds);
-            }
-        };
-        timer.start();
-    }
-
     private void stopLoop() {
         if (timer != null) {
             timer.stop();
@@ -311,56 +285,79 @@ public final class Level13 extends BaseLevel {
     }
 
     private void update(double deltaSeconds) {
+        // Stop updating when the level is paused or already completed.
         if (paused || finished) {
             return;
         }
 
-        handleWorldSwitch();
-        updateMovePlatforms(deltaSeconds);
-        moveWithPlatform();
-
-        if (checkTrapCollision()) {
-            return;
+        // Handle the light/dark world switch and prevent repeated toggles from one key press.
+        if (activeKeys.contains(WORLD_SWITCH_KEY) && !worldSwitchLocked) {
+            if (darkWorld) {
+                darkWorld = false;
+            } else if (energy > MIN_DARK_ENERGY) {
+                darkWorld = true;
+            }
+            worldSwitchLocked = true;
         }
 
-        updatePlayer(deltaSeconds);
-
-        if (checkTrapCollision()) {
-            return;
+        // Move with the platform from the previous frame, then update all moving platforms.
+        if (currentPlatform != null) {
+            player.moveBy(currentPlatform.getDeltaX(), currentPlatform.getDeltaY());
         }
-
-        if (updateEnergy(deltaSeconds)) {
-            return;
-        }
-
-        checkKey();
-        updateView();
-        checkDoor();
-    }
-
-    private void handleWorldSwitch() {
-        if (!activeKeys.contains(WORLD_SWITCH_KEY) || worldSwitchLocked) {
-            return;
-        }
-
-        if (darkWorld) {
-            darkWorld = false;
-        } else if (energy > MIN_DARK_ENERGY) {
-            darkWorld = true;
-        }
-
-        worldSwitchLocked = true;
-    }
-
-    private void updateMovePlatforms(double deltaSeconds) {
         for (MovePlatform platform : movePlatforms) {
             platform.update(deltaSeconds);
         }
-    }
 
-    private void moveWithPlatform() {
-        if (currentPlatform != null) {
-            player.moveBy(currentPlatform.getDeltaX(), currentPlatform.getDeltaY());
+        // Check hazards after the environment moves.
+        if (checkTrapCollision()) {
+            return;
+        }
+
+        // Update player input, physics and collision resolution.
+        updatePlayer(deltaSeconds);
+
+        // Check hazards again after the player has moved.
+        if (checkTrapCollision()) {
+            return;
+        }
+
+        // Update the energy mechanic based on the current world state.
+        if (darkWorld) {
+            energy -= DARK_DRAIN * deltaSeconds;
+            if (energy <= 0) {
+                energy = MIN_DARK_ENERGY;
+                darkWorld = false;
+            }
+        } else {
+            energy += LIGHT_CHARGE * deltaSeconds;
+            if (energy >= ENERGY_DANGER) {
+                resetPlayer();
+                return;
+            }
+        }
+
+        if (energy < 0) {
+            energy = 0;
+        }
+        if (energy > ENERGY_MAX) {
+            energy = ENERGY_MAX;
+        }
+
+        // Show and collect the key only when the player is in the dark world.
+        boolean keyVisible = darkWorld && !hasKey;
+        key.setVisible(keyVisible);
+        if (!hasKey && keyVisible && player.getBounds().intersects(key.getBounds())) {
+            hasKey = true;
+            key.setCollected(true);
+        }
+
+        // Refresh UI and object visuals to match the latest game state.
+        refreshView();
+
+        // Finish the level when the player reaches the door with the key in the light world.
+        if (!darkWorld && hasKey && player.getBounds().intersects(door.getBounds())) {
+            finished = true;
+            onGoalReached();
         }
     }
 
@@ -440,104 +437,52 @@ public final class Level13 extends BaseLevel {
         return false;
     }
 
-    private boolean updateEnergy(double deltaSeconds) {
-        if (darkWorld) {
-            energy -= DARK_DRAIN * deltaSeconds;
-            if (energy <= 0) {
-                energy = MIN_DARK_ENERGY;
-                darkWorld = false;
-            }
-        } else {
-            energy += LIGHT_CHARGE * deltaSeconds;
-            if (energy >= ENERGY_DANGER) {
-                resetPlayer();
-                return true;
-            }
-        }
-
-        if (energy < 0) {
-            energy = 0;
-        }
-        if (energy > ENERGY_MAX) {
-            energy = ENERGY_MAX;
-        }
-        return false;
-    }
-
-    private void checkKey() {
-        boolean keyVisible = darkWorld && !hasKey;
-        key.setVisible(keyVisible);
-
-        if (!hasKey && keyVisible && player.getBounds().intersects(key.getBounds())) {
-            hasKey = true;
-            key.setCollected(true);
-        }
-    }
-
-    private void updateView() {
-        updateDarkLayer();
-        updateBlockOpacity();
-        updateDoorView();
-        updateKeyView();
-        updateEnergyBarView();
-    }
-
-    private void updateDarkLayer() {
+    private void refreshView() {
         if (!darkWorld) {
             darkLayer.getChildren().clear();
             darkLayer.setVisible(false);
-            return;
+        } else {
+            double energyRatio = energy / ENERGY_MAX;
+            double lightRadius = MIN_LIGHT_RADIUS + (MAX_LIGHT_RADIUS - MIN_LIGHT_RADIUS) * energyRatio;
+            double centerX = player.getX() + player.getWidth() * 0.5;
+            double centerY = player.getY() + player.getHeight() * 0.5;
+            darkLayer.getChildren().setAll(createDarkOverlay(centerX, centerY, lightRadius));
+            darkLayer.setVisible(true);
         }
 
-        double centerX = player.getX() + player.getWidth() * 0.5;
-        double centerY = player.getY() + player.getHeight() * 0.5;
-        darkLayer.getChildren().setAll(createDarkOverlay(centerX, centerY, getCurrentLightRadius()));
-        darkLayer.setVisible(true);
-    }
-
-    private void updateBlockOpacity() {
         for (SolidBlock block : solidBlocks) {
             block.getNode().setOpacity(darkWorld ? 0.9 : 1.0);
         }
-    }
 
-    private void updateDoorView() {
         door.refreshStyle(hasKey, darkWorld);
         door.setSize(DOOR_WIDTH, DOOR_HEIGHT);
         door.setImage(hasKey ? DOOR_IMAGE_OPEN : DOOR_IMAGE_CLOSED);
-        door.setPosition(getDoorX(), DOOR_Y);
-    }
+        door.setPosition(config.getWorldWidth() - 165, DOOR_Y);
 
-    private void updateKeyView() {
         key.refreshStyle();
         key.setSize(KEY_WIDTH, KEY_HEIGHT);
         key.setImage(KEY_IMAGE);
         key.setPosition(KEY_X, KEY_Y);
         key.setVisible(darkWorld && !hasKey);
-    }
 
-    private void updateEnergyBarView() {
         double energyHeight = 50 * (energy / ENERGY_MAX);
         double barX = player.getX() + player.getWidth() + 8;
         double barY = player.getY() - 4;
+        Color energyColor;
+        if (energy >= ENERGY_DANGER - 8) {
+            energyColor = Color.web("#ef4444");
+        } else if (energy >= 60) {
+            energyColor = Color.web("#f59e0b");
+        } else {
+            energyColor = Color.web("#22c55e");
+        }
 
         energyTrack.setLayoutX(barX);
         energyTrack.setLayoutY(barY);
         energyBar.setLayoutX(barX + 2);
         energyBar.setLayoutY(barY + 2 + (50 - energyHeight));
         energyBar.setHeight(energyHeight);
-        energyBar.setFill(getEnergyColor());
-    }
-
-    private void checkDoor() {
-        if (darkWorld || !hasKey) {
-            return;
-        }
-
-        if (player.getBounds().intersects(door.getBounds())) {
-            finished = true;
-            onGoalReached();
-        }
+        energyBar.setFill(energyColor);
     }
 
     private void resetPlayer() {
@@ -547,7 +492,7 @@ public final class Level13 extends BaseLevel {
         worldSwitchLocked = false;
         energy = ENERGY_START;
         currentPlatform = null;
-        updateView();
+        refreshView();
     }
 
     private void togglePause(boolean newState) {
@@ -564,26 +509,6 @@ public final class Level13 extends BaseLevel {
             lastFrame = -1;
         }
     }
-
-    private Color getEnergyColor() {
-        if (energy >= ENERGY_DANGER - 8) {
-            return Color.web("#ef4444");
-        }
-        if (energy >= 60) {
-            return Color.web("#f59e0b");
-        }
-        return Color.web("#22c55e");
-    }
-
-    private double getCurrentLightRadius() {
-        double energyRatio = energy / ENERGY_MAX;
-        return MIN_LIGHT_RADIUS + (MAX_LIGHT_RADIUS - MIN_LIGHT_RADIUS) * energyRatio;
-    }
-
-    private double getDoorX() {
-        return config.getWorldWidth() - 165;
-    }
-
     private Rectangle createDarkOverlay(double playerX, double playerY, double radius) {
         Rectangle darkOverlay = new Rectangle(config.getWorldWidth(), config.getWorldHeight());
         darkOverlay.setFill(new RadialGradient(
